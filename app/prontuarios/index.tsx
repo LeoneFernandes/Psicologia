@@ -14,6 +14,10 @@ type Status = "Em andamento" | "Encerrado";
 
 export default function Prontuarios() {
   const [paciente, setPaciente] = useState("");
+  const [dataNascimento, setDataNascimento] = useState("");
+  const [idade, setIdade] = useState("");
+  const [endereco, setEndereco] = useState("");
+
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
   const [data, setData] = useState("");
@@ -36,29 +40,50 @@ export default function Prontuarios() {
     Plano: "#F97316",
   };
 
-  // Função pra formatar o texto da hora automaticamente
+  // Formata hora automaticamente (ex: 1530 -> 15h 30min)
   const formatarHora = (texto: string) => {
-    // remove tudo que não for número
     const apenasNumeros = texto.replace(/\D/g, "");
-
-    // limita a 4 dígitos (HHMM)
     let formatado = apenasNumeros.slice(0, 4);
-
     if (formatado.length >= 3) {
-      // Exemplo: "1530" -> "15h 30min"
       return `${formatado.slice(0, 2)}h ${formatado.slice(2)}min`;
     } else if (formatado.length >= 1 && formatado.length <= 2) {
-      // Exemplo: "15" -> "15h"
       return `${formatado}h`;
+    }
+    return formatado;
+  };
+
+  // Formata data automaticamente (ex: 01012000 -> 01/01/2000)
+  const formatarData = (texto: string) => {
+    const apenasNumeros = texto.replace(/\D/g, "").slice(0, 8);
+    let formatado = apenasNumeros;
+
+    if (apenasNumeros.length > 4) {
+      formatado = `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(
+        2,
+        4
+      )}/${apenasNumeros.slice(4)}`;
+    } else if (apenasNumeros.length > 2) {
+      formatado = `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2)}`;
     }
 
     return formatado;
+  };
+
+  // Formata valor em reais automaticamente (ex: 1000 -> R$ 10,00)
+  const formatarValor = (texto: string) => {
+    const apenasNumeros = texto.replace(/\D/g, "");
+    if (!apenasNumeros) return "";
+    const numero = (parseInt(apenasNumeros, 10) / 100).toFixed(2);
+    return "R$ " + numero.replace(".", ",");
   };
 
   const salvarProntuario = () => {
     alert("✅ Prontuário salvo com sucesso!");
     console.log({
       paciente,
+      dataNascimento,
+      idade,
+      endereco,
       inicio,
       fim,
       data,
@@ -79,11 +104,19 @@ export default function Prontuarios() {
       <TouchableOpacity
         style={[
           styles.dropdown,
-          corSelecionada && { backgroundColor: corSelecionada, borderColor: corSelecionada },
+          corSelecionada && {
+            backgroundColor: corSelecionada,
+            borderColor: corSelecionada,
+          },
         ]}
         onPress={() => setMostrarOpcoes(!mostrarOpcoes)}
       >
-        <Text style={[styles.dropdownText, tipoAtendimento && styles.dropdownTextSelecionado]}>
+        <Text
+          style={[
+            styles.dropdownText,
+            tipoAtendimento && styles.dropdownTextSelecionado,
+          ]}
+        >
           {tipoAtendimento
             ? `Tipo de Atendimento: ${tipoAtendimento}`
             : "Selecione o tipo de atendimento"}
@@ -101,18 +134,43 @@ export default function Prontuarios() {
                 setMostrarOpcoes(false);
               }}
             >
-              <Text style={[styles.opcaoTexto, { color: cores[opcao] }]}>{opcao}</Text>
+              <Text style={[styles.opcaoTexto, { color: cores[opcao] }]}>
+                {opcao}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
       )}
 
-      {/* Nome do Paciente */}
+      {/* Dados do paciente */}
       <TextInput
         style={styles.input}
         placeholder="Nome do paciente"
         value={paciente}
         onChangeText={setPaciente}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Data de nascimento (ex: 15/03/1995)"
+        value={dataNascimento}
+        onChangeText={(t) => setDataNascimento(formatarData(t))}
+        keyboardType="numeric"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Idade"
+        value={idade}
+        onChangeText={setIdade}
+        keyboardType="numeric"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Endereço"
+        value={endereco}
+        onChangeText={setEndereco}
       />
 
       {/* Horários */}
@@ -133,12 +191,13 @@ export default function Prontuarios() {
         />
       </View>
 
-      {/* Data */}
+      {/* Data da consulta */}
       <TextInput
         style={styles.input}
-        placeholder="Data (ex: 18/10/2025)"
+        placeholder="Data da consulta (ex: 18/10/2025)"
         value={data}
-        onChangeText={setData}
+        onChangeText={(t) => setData(formatarData(t))}
+        keyboardType="numeric"
       />
 
       {/* Valor */}
@@ -146,7 +205,7 @@ export default function Prontuarios() {
         style={styles.input}
         placeholder="Valor da consulta (R$)"
         value={valor}
-        onChangeText={setValor}
+        onChangeText={(t) => setValor(formatarValor(t))}
         keyboardType="numeric"
       />
 
@@ -165,7 +224,12 @@ export default function Prontuarios() {
         style={[styles.dropdown, { borderColor: "#aaa" }]}
         onPress={() => setMostrarStatus(!mostrarStatus)}
       >
-        <Text style={[styles.dropdownText, status && { color: "#000", fontWeight: "600" }]}>
+        <Text
+          style={[
+            styles.dropdownText,
+            status && { color: "#000", fontWeight: "600" },
+          ]}
+        >
           {status ? `Status: ${status}` : "Selecione o status"}
         </Text>
       </TouchableOpacity>

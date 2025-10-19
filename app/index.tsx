@@ -14,11 +14,12 @@ export default function Home() {
       <Text style={styles.subtitle}>Escolha uma opção:</Text>
 
       <View style={styles.menu}>
-        <Link href="/prontuarios" asChild>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>📋 Prontuários</Text>
-          </TouchableOpacity>
-        </Link>
+        {/* Redireciona para a nova tela de opções de prontuário */}
+        <Link href="/prontuarios/opcao" asChild>
+    <TouchableOpacity style={styles.button}>
+    <Text style={styles.buttonText}>📋 Prontuários</Text>
+    </TouchableOpacity>
+    </Link>
 
         <Link href="/agendamentos" asChild>
           <TouchableOpacity style={styles.button}>
