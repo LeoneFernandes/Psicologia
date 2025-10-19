@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -7,6 +8,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
+import { getApp, getApps, initializeApp } from "firebase/app";
+import {
+  addDoc,
+  collection,
+  getFirestore,
+  serverTimestamp,
+} from "firebase/firestore";
+import { firebaseConfig } from "../../config/firebaseConfig"; // ⚠️ note que agora exportamos firebaseConfig
+
+// 🔥 Evita inicializar o Firebase mais de uma vez
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app);
 
 // Tipos
 type Atendimento = "Online" | "Presencial" | "Particular" | "Plano";
@@ -17,16 +31,13 @@ export default function Prontuarios() {
   const [dataNascimento, setDataNascimento] = useState("");
   const [idade, setIdade] = useState("");
   const [endereco, setEndereco] = useState("");
-
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
   const [data, setData] = useState("");
   const [valor, setValor] = useState("");
   const [evolucao, setEvolucao] = useState("");
-
   const [tipoAtendimento, setTipoAtendimento] = useState<Atendimento | "">("");
   const [mostrarOpcoes, setMostrarOpcoes] = useState(false);
-
   const [status, setStatus] = useState<Status | "">("");
   const [mostrarStatus, setMostrarStatus] = useState(false);
 
@@ -40,7 +51,6 @@ export default function Prontuarios() {
     Plano: "#F97316",
   };
 
-  // Formata hora automaticamente (ex: 1530 -> 15h 30min)
   const formatarHora = (texto: string) => {
     const apenasNumeros = texto.replace(/\D/g, "");
     let formatado = apenasNumeros.slice(0, 4);
@@ -52,11 +62,9 @@ export default function Prontuarios() {
     return formatado;
   };
 
-  // Formata data automaticamente (ex: 01012000 -> 01/01/2000)
   const formatarData = (texto: string) => {
     const apenasNumeros = texto.replace(/\D/g, "").slice(0, 8);
     let formatado = apenasNumeros;
-
     if (apenasNumeros.length > 4) {
       formatado = `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(
         2,
@@ -65,11 +73,9 @@ export default function Prontuarios() {
     } else if (apenasNumeros.length > 2) {
       formatado = `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2)}`;
     }
-
     return formatado;
   };
 
-  // Formata valor em reais automaticamente (ex: 1000 -> R$ 10,00)
   const formatarValor = (texto: string) => {
     const apenasNumeros = texto.replace(/\D/g, "");
     if (!apenasNumeros) return "";
@@ -77,21 +83,40 @@ export default function Prontuarios() {
     return "R$ " + numero.replace(".", ",");
   };
 
-  const salvarProntuario = () => {
-    alert("✅ Prontuário salvo com sucesso!");
-    console.log({
-      paciente,
-      dataNascimento,
-      idade,
-      endereco,
-      inicio,
-      fim,
-      data,
-      valor,
-      evolucao,
-      tipoAtendimento,
-      status,
-    });
+  const salvarProntuario = async () => {
+    try {
+      await addDoc(collection(db, "prontuarios"), {
+        paciente,
+        dataNascimento,
+        idade,
+        endereco,
+        inicio,
+        fim,
+        data,
+        valor,
+        evolucao,
+        tipoAtendimento,
+        status,
+        criadoEm: serverTimestamp(),
+      });
+
+      Alert.alert("✅ Sucesso", "Prontuário salvo com sucesso!");
+
+      setPaciente("");
+      setDataNascimento("");
+      setIdade("");
+      setEndereco("");
+      setInicio("");
+      setFim("");
+      setData("");
+      setValor("");
+      setEvolucao("");
+      setTipoAtendimento("");
+      setStatus("");
+    } catch (error) {
+      console.error("Erro ao salvar prontuário:", error);
+      Alert.alert("❌ Erro", "Não foi possível salvar o prontuário.");
+    }
   };
 
   const corSelecionada = tipoAtendimento ? cores[tipoAtendimento] : undefined;
@@ -173,7 +198,6 @@ export default function Prontuarios() {
         onChangeText={setEndereco}
       />
 
-      {/* Horários */}
       <View style={styles.row}>
         <TextInput
           style={[styles.input, styles.halfInput]}
@@ -191,7 +215,6 @@ export default function Prontuarios() {
         />
       </View>
 
-      {/* Data da consulta */}
       <TextInput
         style={styles.input}
         placeholder="Data da consulta (ex: 18/10/2025)"
@@ -200,7 +223,6 @@ export default function Prontuarios() {
         keyboardType="numeric"
       />
 
-      {/* Valor */}
       <TextInput
         style={styles.input}
         placeholder="Valor da consulta (R$)"
@@ -209,7 +231,6 @@ export default function Prontuarios() {
         keyboardType="numeric"
       />
 
-      {/* Evolução */}
       <TextInput
         style={[styles.input, styles.textArea]}
         placeholder="Evolução (anotações da consulta)"
@@ -219,7 +240,6 @@ export default function Prontuarios() {
         numberOfLines={6}
       />
 
-      {/* Status */}
       <TouchableOpacity
         style={[styles.dropdown, { borderColor: "#aaa" }]}
         onPress={() => setMostrarStatus(!mostrarStatus)}
@@ -251,7 +271,6 @@ export default function Prontuarios() {
         </View>
       )}
 
-      {/* Botão salvar */}
       <TouchableOpacity style={styles.button} onPress={salvarProntuario}>
         <Text style={styles.buttonText}>💾 Salvar Prontuário</Text>
       </TouchableOpacity>
