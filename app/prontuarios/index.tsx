@@ -16,7 +16,7 @@ import {
   getFirestore,
   serverTimestamp,
 } from "firebase/firestore";
-import { firebaseConfig } from "../../config/firebaseConfig"; // ⚠️ note que agora exportamos firebaseConfig
+import { firebaseConfig } from "../../config/firebaseConfig";
 
 // 🔥 Evita inicializar o Firebase mais de uma vez
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -31,6 +31,7 @@ export default function Prontuarios() {
   const [dataNascimento, setDataNascimento] = useState("");
   const [idade, setIdade] = useState("");
   const [endereco, setEndereco] = useState("");
+  const [email, setEmail] = useState("");
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
   const [data, setData] = useState("");
@@ -40,6 +41,9 @@ export default function Prontuarios() {
   const [mostrarOpcoes, setMostrarOpcoes] = useState(false);
   const [status, setStatus] = useState<Status | "">("");
   const [mostrarStatus, setMostrarStatus] = useState(false);
+
+  // 👇 Novo estado para exibir mensagem abaixo do botão
+  const [mensagemSucesso, setMensagemSucesso] = useState("");
 
   const opcoes: Atendimento[] = ["Online", "Presencial", "Particular", "Plano"];
   const opcoesStatus: Status[] = ["Em andamento", "Encerrado"];
@@ -85,11 +89,19 @@ export default function Prontuarios() {
 
   const salvarProntuario = async () => {
     try {
+      setMensagemSucesso(""); // limpa mensagem antes de tentar salvar
+
+      if (!email.includes("@")) {
+        Alert.alert("⚠️ E-mail inválido", "Por favor, insira um e-mail válido.");
+        return;
+      }
+
       await addDoc(collection(db, "prontuarios"), {
         paciente,
         dataNascimento,
         idade,
         endereco,
+        email,
         inicio,
         fim,
         data,
@@ -100,12 +112,16 @@ export default function Prontuarios() {
         criadoEm: serverTimestamp(),
       });
 
+      // Mostra o alerta padrão + mensagem abaixo do botão
       Alert.alert("✅ Sucesso", "Prontuário salvo com sucesso!");
+      setMensagemSucesso("✅ Salvo com sucesso!");
 
+      // Limpa os campos
       setPaciente("");
       setDataNascimento("");
       setIdade("");
       setEndereco("");
+      setEmail("");
       setInicio("");
       setFim("");
       setData("");
@@ -113,6 +129,9 @@ export default function Prontuarios() {
       setEvolucao("");
       setTipoAtendimento("");
       setStatus("");
+
+      // Some com a mensagem depois de 4 segundos
+      setTimeout(() => setMensagemSucesso(""), 4000);
     } catch (error) {
       console.error("Erro ao salvar prontuário:", error);
       Alert.alert("❌ Erro", "Não foi possível salvar o prontuário.");
@@ -174,7 +193,6 @@ export default function Prontuarios() {
         value={paciente}
         onChangeText={setPaciente}
       />
-
       <TextInput
         style={styles.input}
         placeholder="Data de nascimento (ex: 15/03/1995)"
@@ -182,7 +200,6 @@ export default function Prontuarios() {
         onChangeText={(t) => setDataNascimento(formatarData(t))}
         keyboardType="numeric"
       />
-
       <TextInput
         style={styles.input}
         placeholder="Idade"
@@ -190,12 +207,19 @@ export default function Prontuarios() {
         onChangeText={setIdade}
         keyboardType="numeric"
       />
-
       <TextInput
         style={styles.input}
         placeholder="Endereço"
         value={endereco}
         onChangeText={setEndereco}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="E-mail do paciente"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
       />
 
       <View style={styles.row}>
@@ -222,7 +246,6 @@ export default function Prontuarios() {
         onChangeText={(t) => setData(formatarData(t))}
         keyboardType="numeric"
       />
-
       <TextInput
         style={styles.input}
         placeholder="Valor da consulta (R$)"
@@ -230,7 +253,6 @@ export default function Prontuarios() {
         onChangeText={(t) => setValor(formatarValor(t))}
         keyboardType="numeric"
       />
-
       <TextInput
         style={[styles.input, styles.textArea]}
         placeholder="Evolução (anotações da consulta)"
@@ -271,9 +293,15 @@ export default function Prontuarios() {
         </View>
       )}
 
+      {/* Botão de salvar */}
       <TouchableOpacity style={styles.button} onPress={salvarProntuario}>
         <Text style={styles.buttonText}>💾 Salvar Prontuário</Text>
       </TouchableOpacity>
+
+      {/* Mensagem abaixo do botão */}
+      {mensagemSucesso !== "" && (
+        <Text style={styles.mensagemSucesso}>{mensagemSucesso}</Text>
+      )}
     </ScrollView>
   );
 }
@@ -354,5 +382,12 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
+  },
+  mensagemSucesso: {
+    textAlign: "center",
+    color: "#22C55E",
+    fontSize: 16,
+    marginTop: 10,
+    fontWeight: "500",
   },
 });
