@@ -1,11 +1,5 @@
-import { getApp, getApps, initializeApp } from "firebase/app";
-import {
-  addDoc,
-  collection,
-  getFirestore,
-  serverTimestamp,
-} from "firebase/firestore";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -15,17 +9,28 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { firebaseConfig } from "../../config/firebaseConfig";
 
-// 🔥 Inicializa Firebase (evita múltiplas inicializações)
+import { getApp, getApps, initializeApp } from "firebase/app";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getFirestore,
+  serverTimestamp,
+} from "firebase/firestore";
+import { firebaseConfig } from "../../../config/firebaseConfig";
+
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
-// Tipos
 type Atendimento = "Online" | "Presencial" | "Particular" | "Plano";
 type Status = "Em andamento" | "Encerrado";
 
-export default function Prontuarios() {
+export default function AbrirProntuario() {
+  const { id } = useLocalSearchParams();
+  const router = useRouter();
+
   const [paciente, setPaciente] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
   const [idade, setIdade] = useState("");
@@ -37,10 +42,11 @@ export default function Prontuarios() {
   const [valor, setValor] = useState("");
   const [evolucao, setEvolucao] = useState("");
   const [tipoAtendimento, setTipoAtendimento] = useState<Atendimento | "">("");
-  const [mostrarOpcoes, setMostrarOpcoes] = useState(false);
   const [status, setStatus] = useState<Status | "">("");
-  const [mostrarStatus, setMostrarStatus] = useState(false);
   const [mensagemSucesso, setMensagemSucesso] = useState("");
+
+  const [mostrarOpcoes, setMostrarOpcoes] = useState(false);
+  const [mostrarStatus, setMostrarStatus] = useState(false);
 
   const opcoes: Atendimento[] = ["Online", "Presencial", "Particular", "Plano"];
   const opcoesStatus: Status[] = ["Em andamento", "Encerrado"];
@@ -52,7 +58,7 @@ export default function Prontuarios() {
     Plano: "#F97316",
   };
 
-  // 🔹 Formatações
+  // 🔹 Funções de formatação
   const formatarHora = (texto: string) => {
     const apenasNumeros = texto.replace(/\D/g, "");
     let formatado = apenasNumeros.slice(0, 4);
@@ -66,15 +72,16 @@ export default function Prontuarios() {
 
   const formatarData = (texto: string) => {
     const apenasNumeros = texto.replace(/\D/g, "").slice(0, 8);
+    let formatado = apenasNumeros;
     if (apenasNumeros.length > 4) {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(
+      formatado = `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(
         2,
         4
       )}/${apenasNumeros.slice(4)}`;
     } else if (apenasNumeros.length > 2) {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2)}`;
+      formatado = `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2)}`;
     }
-    return apenasNumeros;
+    return formatado;
   };
 
   const formatarValor = (texto: string) => {
@@ -84,22 +91,57 @@ export default function Prontuarios() {
     return "R$ " + numero.replace(".", ",");
   };
 
-  // 🔹 Função principal
-  const salvarProntuario = async () => {
+  // 🔹 Converte valor "R$ 100,00" → 100.00
+  const parseValor = (valorTexto: string): number => {
+    const numeros = valorTexto.replace(/[R$\s.]/g, "").replace(",", ".");
+    return parseFloat(numeros) || 0;
+  };
+
+  // 🔹 Carrega os dados do prontuário
+  useEffect(() => {
+    const carregarProntuario = async () => {
+      try {
+        if (!id) return;
+        const docRef = doc(db, "prontuarios", id as string);
+        const snapshot = await getDoc(docRef);
+        if (snapshot.exists()) {
+          const dados = snapshot.data();
+          setPaciente(dados.paciente || "");
+          setDataNascimento(dados.dataNascimento || "");
+          setIdade(dados.idade || "");
+          setEndereco(dados.endereco || "");
+          setEmail(dados.email || "");
+          setInicio("");
+          setFim("");
+          setData("");
+          setValor("");
+          setEvolucao(dados.evolucao || "");
+          setTipoAtendimento(dados.tipoAtendimento || "");
+          setStatus(dados.status || "");
+        } else {
+          Alert.alert("Erro", "Prontuário não encontrado.");
+          router.back();
+        }
+      } catch (e) {
+        console.error("Erro ao carregar prontuário:", e);
+      }
+    };
+
+    carregarProntuario();
+  }, [id]);
+
+  // 🔹 Cria um novo registro no Firestore (em vez de sobrescrever)
+  const salvarAlteracoes = async () => {
     try {
       setMensagemSucesso("");
 
-      if (!paciente.trim() || !data.trim()) {
-        Alert.alert("⚠️ Campos obrigatórios", "Preencha o nome e a data.");
+      if (!email.includes("@")) {
+        Alert.alert("⚠️ E-mail inválido", "Por favor, insira um e-mail válido.");
         return;
       }
 
-      if (email && !email.includes("@")) {
-        Alert.alert("⚠️ E-mail inválido", "Insira um e-mail válido.");
-        return;
-      }
+      const valorAtual = parseValor(valor);
 
-      // 🔥 Cria um novo documento a cada consulta (sem sobrescrever)
       await addDoc(collection(db, "prontuarios"), {
         paciente,
         dataNascimento,
@@ -116,27 +158,15 @@ export default function Prontuarios() {
         criadoEm: serverTimestamp(),
       });
 
-      Alert.alert("✅ Sucesso", "Prontuário salvo com sucesso!");
-      setMensagemSucesso("✅ Salvo com sucesso!");
+      Alert.alert("✅ Sucesso", "Nova consulta salva com sucesso!");
+      setMensagemSucesso("✅ Nova consulta salva com sucesso!");
 
-      // 🔹 Limpa os campos
-      setPaciente("");
-      setDataNascimento("");
-      setIdade("");
-      setEndereco("");
-      setEmail("");
-      setInicio("");
-      setFim("");
-      setData("");
-      setValor("");
-      setEvolucao("");
-      setTipoAtendimento("");
-      setStatus("");
-
-      setTimeout(() => setMensagemSucesso(""), 4000);
+      setTimeout(() => {
+        router.back();
+      }, 1200);
     } catch (error) {
-      console.error("Erro ao salvar prontuário:", error);
-      Alert.alert("❌ Erro", "Não foi possível salvar o prontuário.");
+      console.error("Erro ao salvar consulta:", error);
+      Alert.alert("❌ Erro", "Não foi possível salvar a nova consulta.");
     }
   };
 
@@ -144,7 +174,7 @@ export default function Prontuarios() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>📋 Prontuário</Text>
+      <Text style={styles.title}>📝 Editar Prontuário</Text>
 
       {/* Tipo de Atendimento */}
       <TouchableOpacity
@@ -188,7 +218,7 @@ export default function Prontuarios() {
         </View>
       )}
 
-      {/* Campos de texto */}
+      {/* Campos principais */}
       <TextInput
         style={styles.input}
         placeholder="Nome do paciente"
@@ -197,17 +227,15 @@ export default function Prontuarios() {
       />
       <TextInput
         style={styles.input}
-        placeholder="Data de nascimento (ex: 15/03/1995)"
+        placeholder="Data de nascimento"
         value={dataNascimento}
         onChangeText={(t) => setDataNascimento(formatarData(t))}
-        keyboardType="numeric"
       />
       <TextInput
         style={styles.input}
         placeholder="Idade"
         value={idade}
         onChangeText={setIdade}
-        keyboardType="numeric"
       />
       <TextInput
         style={styles.input}
@@ -217,40 +245,36 @@ export default function Prontuarios() {
       />
       <TextInput
         style={styles.input}
-        placeholder="E-mail do paciente"
+        placeholder="E-mail"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
-        autoCapitalize="none"
       />
 
       <View style={styles.row}>
         <TextInput
           style={[styles.input, styles.halfInput]}
-          placeholder="Início (ex: 15h 30min)"
+          placeholder="Início"
           value={inicio}
           onChangeText={(t) => setInicio(formatarHora(t))}
-          keyboardType="numeric"
         />
         <TextInput
           style={[styles.input, styles.halfInput]}
-          placeholder="Fim (ex: 16h 10min)"
+          placeholder="Fim"
           value={fim}
           onChangeText={(t) => setFim(formatarHora(t))}
-          keyboardType="numeric"
         />
       </View>
 
       <TextInput
         style={styles.input}
-        placeholder="Data da consulta (ex: 18/10/2025)"
+        placeholder="Data da consulta"
         value={data}
         onChangeText={(t) => setData(formatarData(t))}
-        keyboardType="numeric"
       />
       <TextInput
         style={styles.input}
-        placeholder="Valor da consulta (R$)"
+        placeholder="Valor da consulta"
         value={valor}
         onChangeText={(t) => setValor(formatarValor(t))}
         keyboardType="numeric"
@@ -258,7 +282,7 @@ export default function Prontuarios() {
 
       <TextInput
         style={[styles.input, styles.textArea]}
-        placeholder="Evolução (anotações da consulta)"
+        placeholder="Evolução"
         value={evolucao}
         onChangeText={setEvolucao}
         multiline
@@ -297,9 +321,8 @@ export default function Prontuarios() {
         </View>
       )}
 
-      {/* Botão */}
-      <TouchableOpacity style={styles.button} onPress={salvarProntuario}>
-        <Text style={styles.buttonText}>💾 Salvar Prontuário</Text>
+      <TouchableOpacity style={styles.button} onPress={salvarAlteracoes}>
+        <Text style={styles.buttonText}>💾 Salvar Alterações</Text>
       </TouchableOpacity>
 
       {mensagemSucesso !== "" && (
@@ -309,7 +332,6 @@ export default function Prontuarios() {
   );
 }
 
-// 💅 Estilos
 const styles = StyleSheet.create({
   container: { padding: 20, backgroundColor: "#f3f4f6", flexGrow: 1 },
   title: {

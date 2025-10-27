@@ -1,24 +1,26 @@
+import { useRouter } from "expo-router";
 import { getApp, getApps, initializeApp } from "firebase/app";
 import {
   collection,
   deleteDoc,
   doc,
-  getDocs,
   getFirestore,
-  updateDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
-  Modal,
-  ScrollView,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+
+// ✅ Caminho corrigido do Firebase
 import { firebaseConfig } from "../../../config/firebaseConfig";
 
 // 🔹 Inicializa o Firebase apenas uma vez
@@ -26,6 +28,8 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
 export default function ProntuariosCadastrados() {
+  const router = useRouter();
+
   const [prontuarios, setProntuarios] = useState<any[]>([]);
   const [filtrados, setFiltrados] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -34,84 +38,79 @@ export default function ProntuariosCadastrados() {
     "Todos" | "Em andamento" | "Encerrado"
   >("Todos");
 
-  // 🔹 Estados para o modal de edição
-  const [modalVisivel, setModalVisivel] = useState(false);
-  const [prontuarioEditando, setProntuarioEditando] = useState<any>(null);
-
-  const [paciente, setPaciente] = useState("");
-  const [data, setData] = useState("");
-  const [tipoAtendimento, setTipoAtendimento] = useState("");
-  const [status, setStatus] = useState("");
-  const [evolucao, setEvolucao] = useState("");
-
-  // 🔹 Função para buscar prontuários no Firestore
-  const carregarProntuarios = async () => {
-    setCarregando(true);
-    try {
-      const querySnapshot = await getDocs(collection(db, "prontuarios"));
-      const lista: any[] = [];
-      querySnapshot.forEach((d) => {
-        lista.push({ id: d.id, ...d.data() });
-      });
-      setProntuarios(lista);
-      setFiltrados(lista);
-    } catch (error) {
-      console.error("Erro ao carregar prontuários:", error);
-    } finally {
-      setCarregando(false);
-    }
-  };
-
-  // 🔹 Excluir prontuário
-  const excluirProntuario = async (id: string) => {
-    const confirmar = window.confirm(
-      "Tem certeza que deseja excluir este prontuário? Essa ação não pode ser desfeita."
+  // 🔹 Escuta mudanças em tempo real no Firestore
+  useEffect(() => {
+    const q = collection(db, "prontuarios");
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const lista: any[] = [];
+        querySnapshot.forEach((d) => {
+          lista.push({ id: d.id, ...d.data() });
+        });
+        setProntuarios(lista);
+        setFiltrados(lista);
+        setCarregando(false);
+      },
+      (err) => {
+        console.error("Erro no onSnapshot:", err);
+        setCarregando(false);
+      }
     );
 
-    if (!confirmar) return;
+    return () => unsubscribe();
+  }, []);
 
+  // 🔹 Excluir prontuário (compatível web + nativo)
+  const excluirProntuario = (id: string) => {
+    const confirmarWeb = () => {
+      const ok = window.confirm(
+        "Tem certeza que deseja excluir este prontuário? Essa ação não pode ser desfeita."
+      );
+      if (!ok) return;
+      executarExclusao(id);
+    };
+
+    const confirmarNativo = () => {
+      Alert.alert(
+        "Excluir prontuário",
+        "Tem certeza que deseja excluir este prontuário? Essa ação não pode ser desfeita.",
+        [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Excluir",
+            style: "destructive",
+            onPress: () => executarExclusao(id),
+          },
+        ]
+      );
+    };
+
+    if (Platform.OS === "web") confirmarWeb();
+    else confirmarNativo();
+  };
+
+  // função que realmente exclui e trata erros
+  const executarExclusao = async (id: string) => {
     try {
       await deleteDoc(doc(db, "prontuarios", id));
-      alert("✅ Prontuário excluído com sucesso!");
-      carregarProntuarios();
+      // no onSnapshot a lista será atualizada automaticamente
+      if (Platform.OS !== "web") {
+        Alert.alert("✅ Prontuário excluído com sucesso!");
+      }
     } catch (error) {
       console.error("Erro ao excluir prontuário:", error);
-      alert("❌ Erro ao excluir prontuário.");
+      if (Platform.OS === "web") {
+        alert("❌ Erro ao excluir prontuário.");
+      } else {
+        Alert.alert("❌ Erro ao excluir prontuário.");
+      }
     }
   };
 
-  // 🔹 Abrir modal de edição
-  const abrirEdicao = (item: any) => {
-    setProntuarioEditando(item);
-    setPaciente(item.paciente || "");
-    setData(item.data || "");
-    setTipoAtendimento(item.tipoAtendimento || "");
-    setStatus(item.status || "");
-    setEvolucao(item.evolucao || "");
-    setModalVisivel(true);
-  };
-
-  // 🔹 Salvar alterações no Firebase
-  const salvarEdicao = async () => {
-    if (!prontuarioEditando) return;
-
-    try {
-      const ref = doc(db, "prontuarios", prontuarioEditando.id);
-      await updateDoc(ref, {
-        paciente,
-        data,
-        tipoAtendimento,
-        status,
-        evolucao,
-      });
-
-      alert("✅ Prontuário atualizado com sucesso!");
-      setModalVisivel(false);
-      carregarProntuarios();
-    } catch (error) {
-      console.error("Erro ao atualizar:", error);
-      alert("❌ Erro ao salvar alterações.");
-    }
+  // 🔹 Abre prontuário completo
+  const abrirProntuario = (id: string) => {
+    router.push(`/prontuarios/abrir/${id}`);
   };
 
   // 🔹 Atualiza lista conforme busca ou filtro
@@ -130,10 +129,6 @@ export default function ProntuariosCadastrados() {
 
     setFiltrados(lista);
   }, [busca, statusFiltro, prontuarios]);
-
-  useEffect(() => {
-    carregarProntuarios();
-  }, []);
 
   if (carregando) {
     return (
@@ -188,27 +183,34 @@ export default function ProntuariosCadastrados() {
           renderItem={({ item }) => (
             <View style={styles.card}>
               <Text style={styles.nome}>{item.paciente || "— Sem nome —"}</Text>
-              <Text style={styles.info}>🗓️ {item.data || "—"}</Text>
+
+              {/* 🗓️ Data + legenda */}
+              <Text style={styles.info}>
+                🗓️{" "}
+                {item.data ? (
+                  <>
+                    <Text style={{ fontWeight: "600", color: "#333" }}>
+                      {item.data}
+                    </Text>
+                    <Text style={{ fontSize: 13, color: "#777" }}>
+                      {" "}
+                      (última consulta atualizada)
+                    </Text>
+                  </>
+                ) : (
+                  "—"
+                )}
+              </Text>
+
               <Text style={styles.info}>💬 {item.tipoAtendimento || "—"}</Text>
               <Text style={styles.info}>📍 {item.status || "—"}</Text>
 
               <View style={{ flexDirection: "row", marginTop: 10, gap: 8 }}>
                 <TouchableOpacity
-                  style={styles.botaoDetalhes}
-                  onPress={() =>
-                    alert(
-                      `Paciente: ${item.paciente}\nData: ${item.data}\nAtendimento: ${item.tipoAtendimento}\nStatus: ${item.status}\nEvolução: ${item.evolucao}`
-                    )
-                  }
+                  style={styles.botaoAbrir}
+                  onPress={() => abrirProntuario(item.id)}
                 >
-                  <Text style={styles.botaoTexto}>Ver Detalhes</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.botaoEditar}
-                  onPress={() => abrirEdicao(item)}
-                >
-                  <Text style={styles.botaoTexto}>Editar</Text>
+                  <Text style={styles.botaoTexto}>Abrir</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -223,65 +225,6 @@ export default function ProntuariosCadastrados() {
           contentContainerStyle={{ paddingBottom: 20 }}
         />
       )}
-
-      {/* 🟣 Modal de edição */}
-      <Modal visible={modalVisivel} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <ScrollView>
-              <Text style={styles.modalTitulo}>✏️ Editar Prontuário</Text>
-
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Nome do paciente"
-                value={paciente}
-                onChangeText={setPaciente}
-              />
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Data"
-                value={data}
-                onChangeText={setData}
-              />
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Tipo de atendimento"
-                value={tipoAtendimento}
-                onChangeText={setTipoAtendimento}
-              />
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Status"
-                value={status}
-                onChangeText={setStatus}
-              />
-              <TextInput
-                style={[styles.modalInput, { height: 80 }]}
-                placeholder="Evolução"
-                value={evolucao}
-                onChangeText={setEvolucao}
-                multiline
-              />
-
-              <View style={styles.modalBotoes}>
-                <TouchableOpacity
-                  style={[styles.modalBotao, { backgroundColor: "#4F46E5" }]}
-                  onPress={salvarEdicao}
-                >
-                  <Text style={styles.modalBotaoTexto}>Salvar</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.modalBotao, { backgroundColor: "#9CA3AF" }]}
-                  onPress={() => setModalVisivel(false)}
-                >
-                  <Text style={styles.modalBotaoTexto}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -361,15 +304,8 @@ const styles = StyleSheet.create({
     color: "#555",
     marginBottom: 2,
   },
-  botaoDetalhes: {
+  botaoAbrir: {
     backgroundColor: "#4F46E5",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  botaoEditar: {
-    backgroundColor: "#F59E0B",
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -387,46 +323,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   botaoExcluirTexto: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-  },
-  modalTitulo: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  modalInput: {
-    backgroundColor: "#f3f4f6",
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  modalBotoes: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginTop: 10,
-  },
-  modalBotao: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  modalBotaoTexto: {
     color: "#fff",
     fontWeight: "600",
   },

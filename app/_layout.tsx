@@ -14,7 +14,7 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
-        {/* Home / Início (sem header se quiser) */}
+        {/* Home / Início */}
         <Stack.Screen
           name="index"
           options={{
@@ -33,7 +33,12 @@ export default function RootLayout() {
             headerTitleAlign: "center",
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.push("/")}>
-                <Ionicons name="arrow-back" size={24} color="#fff" style={{ marginLeft: 10 }} />
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color="#fff"
+                  style={{ marginLeft: 10 }}
+                />
               </TouchableOpacity>
             ),
           }}
@@ -49,7 +54,12 @@ export default function RootLayout() {
             headerTitleAlign: "center",
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.push("/prontuarios/opcao")}>
-                <Ionicons name="arrow-back" size={24} color="#fff" style={{ marginLeft: 10 }} />
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color="#fff"
+                  style={{ marginLeft: 10 }}
+                />
               </TouchableOpacity>
             ),
           }}
@@ -65,7 +75,33 @@ export default function RootLayout() {
             headerTitleAlign: "center",
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.push("/prontuarios/opcao")}>
-                <Ionicons name="arrow-back" size={24} color="#fff" style={{ marginLeft: 10 }} />
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color="#fff"
+                  style={{ marginLeft: 10 }}
+                />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+
+        {/* Abrir prontuário (detalhes e edição) */}
+        <Stack.Screen
+          name="prontuarios/abrir/[id]"
+          options={{
+            title: "Prontuário",
+            headerStyle: { backgroundColor: "#4F46E5" },
+            headerTintColor: "#fff",
+            headerTitleAlign: "center",
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.push("/prontuarios/cadastrados")}>
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color="#fff"
+                  style={{ marginLeft: 10 }}
+                />
               </TouchableOpacity>
             ),
           }}
@@ -81,7 +117,12 @@ export default function RootLayout() {
             headerTitleAlign: "center",
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.push("/")}>
-                <Ionicons name="arrow-back" size={24} color="#fff" style={{ marginLeft: 10 }} />
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color="#fff"
+                  style={{ marginLeft: 10 }}
+                />
               </TouchableOpacity>
             ),
           }}
@@ -97,7 +138,12 @@ export default function RootLayout() {
             headerTitleAlign: "center",
             headerLeft: () => (
               <TouchableOpacity onPress={() => router.push("/")}>
-                <Ionicons name="arrow-back" size={24} color="#fff" style={{ marginLeft: 10 }} />
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color="#fff"
+                  style={{ marginLeft: 10 }}
+                />
               </TouchableOpacity>
             ),
           }}
