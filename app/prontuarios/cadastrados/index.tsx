@@ -20,7 +20,7 @@ import {
   View,
 } from "react-native";
 
-// ✅ Caminho corrigido do Firebase
+// ✅ Caminho do Firebase
 import { firebaseConfig } from "../../../config/firebaseConfig";
 
 // 🔹 Inicializa o Firebase apenas uma vez
@@ -48,6 +48,20 @@ export default function ProntuariosCadastrados() {
         querySnapshot.forEach((d) => {
           lista.push({ id: d.id, ...d.data() });
         });
+
+        // 🔹 Ordena por nome (A–Z) e, dentro do mesmo nome, por data (mais recente primeiro)
+        lista.sort((a, b) => {
+          const nomeA = (a.paciente || "").toLowerCase();
+          const nomeB = (b.paciente || "").toLowerCase();
+          if (nomeA < nomeB) return -1;
+          if (nomeA > nomeB) return 1;
+
+          // se o nome for igual, compara pela data
+          const dataA = a.data ? a.data.split("/").reverse().join("-") : "";
+          const dataB = b.data ? b.data.split("/").reverse().join("-") : "";
+          return dataB.localeCompare(dataA); // mais recente primeiro
+        });
+
         setProntuarios(lista);
         setFiltrados(lista);
         setCarregando(false);

@@ -197,7 +197,7 @@ export default function Prontuarios() {
       />
       <TextInput
         style={styles.input}
-        placeholder="Data de nascimento (ex: 15/03/1995)"
+        placeholder="Data de nascimento (ex: 00/00/0000)"
         value={dataNascimento}
         onChangeText={(t) => setDataNascimento(formatarData(t))}
         keyboardType="numeric"
@@ -227,14 +227,14 @@ export default function Prontuarios() {
       <View style={styles.row}>
         <TextInput
           style={[styles.input, styles.halfInput]}
-          placeholder="Início (ex: 15h 30min)"
+          placeholder="Início (ex: 00h:00min)"
           value={inicio}
           onChangeText={(t) => setInicio(formatarHora(t))}
           keyboardType="numeric"
         />
         <TextInput
           style={[styles.input, styles.halfInput]}
-          placeholder="Fim (ex: 16h 10min)"
+          placeholder="Fim (ex: 00h:00min)"
           value={fim}
           onChangeText={(t) => setFim(formatarHora(t))}
           keyboardType="numeric"
@@ -243,7 +243,7 @@ export default function Prontuarios() {
 
       <TextInput
         style={styles.input}
-        placeholder="Data da consulta (ex: 18/10/2025)"
+        placeholder="Data da consulta (ex: 00/00/0000)"
         value={data}
         onChangeText={(t) => setData(formatarData(t))}
         keyboardType="numeric"
