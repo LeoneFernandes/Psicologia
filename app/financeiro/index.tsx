@@ -59,13 +59,21 @@ export default function Financeiro() {
           tipoAtendimento: doc.data().tipoAtendimento || "",
         }));
 
-        // 🔹 Ordena por data (mais recente primeiro)
+        // 🔹 Ordena por data (mais recente primeiro) e, se igual, por nome
         const listaOrdenada = lista.sort((a, b) => {
           const [diaA, mesA, anoA] = a.data.split("/").map(Number);
           const [diaB, mesB, anoB] = b.data.split("/").map(Number);
           const dataA = new Date(anoA, mesA - 1, diaA);
           const dataB = new Date(anoB, mesB - 1, diaB);
-          return dataB.getTime() - dataA.getTime();
+
+          // Primeiro ordena por data (descendente)
+          const diff = dataB.getTime() - dataA.getTime();
+          if (diff !== 0) return diff;
+
+          // Se a data for igual, ordena alfabeticamente pelo nome
+          return a.paciente.localeCompare(b.paciente, "pt-BR", {
+            sensitivity: "base",
+          });
         });
 
         setProntuarios(listaOrdenada);
@@ -90,7 +98,7 @@ export default function Financeiro() {
     return mes === mesSelecionado && ano === anoSelecionado;
   });
 
-  // 🔹 Calcula o total do mês (somando todos os valores)
+  // 🔹 Calcula o total do mês
   const totalMes = prontuariosFiltrados.reduce((acc, p) => {
     return acc + parseValor(p.valor);
   }, 0);

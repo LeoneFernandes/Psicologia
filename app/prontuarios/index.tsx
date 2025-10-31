@@ -17,7 +17,7 @@ import {
 } from "react-native";
 import { firebaseConfig } from "../../config/firebaseConfig";
 
-// 🔥 Inicializa Firebase (evita múltiplas inicializações)
+// 🔥 Inicializa Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
@@ -31,6 +31,7 @@ export default function Prontuarios() {
   const [idade, setIdade] = useState("");
   const [endereco, setEndereco] = useState("");
   const [email, setEmail] = useState("");
+  const [celular, setCelular] = useState(""); // 📱 Novo campo
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
   const [data, setData] = useState("");
@@ -84,6 +85,22 @@ export default function Prontuarios() {
     return "R$ " + numero.replace(".", ",");
   };
 
+  // 📱 Formata celular: (xx) x xxxx-xxxx
+  const formatarCelular = (texto: string) => {
+    const numeros = texto.replace(/\D/g, "").slice(0, 11);
+    if (numeros.length <= 2) return `(${numeros}`;
+    if (numeros.length <= 3)
+      return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
+    if (numeros.length <= 7)
+      return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)} ${numeros.slice(
+        3
+      )}`;
+    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)} ${numeros.slice(
+      3,
+      7
+    )}-${numeros.slice(7)}`;
+  };
+
   // 🔹 Função principal
   const salvarProntuario = async () => {
     try {
@@ -99,13 +116,14 @@ export default function Prontuarios() {
         return;
       }
 
-      // 🔥 Cria um novo documento a cada consulta (sem sobrescrever)
+      // 🔥 Cria um novo documento no Firestore
       await addDoc(collection(db, "prontuarios"), {
         paciente,
         dataNascimento,
         idade,
         endereco,
         email,
+        celular, // ✅ Incluído
         inicio,
         fim,
         data,
@@ -125,6 +143,7 @@ export default function Prontuarios() {
       setIdade("");
       setEndereco("");
       setEmail("");
+      setCelular("");
       setInicio("");
       setFim("");
       setData("");
@@ -197,7 +216,7 @@ export default function Prontuarios() {
       />
       <TextInput
         style={styles.input}
-        placeholder="Data de nascimento (ex: 00/00/0000)"
+        placeholder="Data de nascimento ex: 00/00/0000"
         value={dataNascimento}
         onChangeText={(t) => setDataNascimento(formatarData(t))}
         keyboardType="numeric"
@@ -223,18 +242,25 @@ export default function Prontuarios() {
         keyboardType="email-address"
         autoCapitalize="none"
       />
+      <TextInput
+        style={styles.input}
+        placeholder="Celular do paciente ex: (xx) x xxxx-xxxx"
+        value={celular}
+        onChangeText={(t) => setCelular(formatarCelular(t))}
+        keyboardType="phone-pad"
+      />
 
       <View style={styles.row}>
         <TextInput
           style={[styles.input, styles.halfInput]}
-          placeholder="Início (ex: 00h:00min)"
+          placeholder="Início ex: 00h:00min"
           value={inicio}
           onChangeText={(t) => setInicio(formatarHora(t))}
           keyboardType="numeric"
         />
         <TextInput
           style={[styles.input, styles.halfInput]}
-          placeholder="Fim (ex: 00h:00min)"
+          placeholder="Fim ex: 00h:00min"
           value={fim}
           onChangeText={(t) => setFim(formatarHora(t))}
           keyboardType="numeric"
@@ -243,7 +269,7 @@ export default function Prontuarios() {
 
       <TextInput
         style={styles.input}
-        placeholder="Data da consulta (ex: 00/00/0000)"
+        placeholder="Data da consulta ex: 00/00/0000"
         value={data}
         onChangeText={(t) => setData(formatarData(t))}
         keyboardType="numeric"

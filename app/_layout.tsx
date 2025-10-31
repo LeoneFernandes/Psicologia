@@ -107,6 +107,27 @@ export default function RootLayout() {
           }}
         />
 
+        {/* Histórico do Paciente */}
+        <Stack.Screen
+          name="prontuarios/historico/[nome]"
+          options={{
+            title: "Histórico do Paciente",
+            headerStyle: { backgroundColor: "#4F46E5" },
+            headerTintColor: "#fff",
+            headerTitleAlign: "center",
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.push("/prontuarios/cadastrados")}>
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color="#fff"
+                  style={{ marginLeft: 10 }}
+                />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+
         {/* Agendamentos */}
         <Stack.Screen
           name="agendamentos/index"
