@@ -1,4 +1,14 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { getApp, getApps, initializeApp } from "firebase/app";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getFirestore,
+  serverTimestamp,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -9,17 +19,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-import { Ionicons } from "@expo/vector-icons";
-import { getApp, getApps, initializeApp } from "firebase/app";
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  getFirestore,
-  serverTimestamp,
-} from "firebase/firestore";
 import { firebaseConfig } from "../../../config/firebaseConfig";
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -29,10 +28,11 @@ type Atendimento = "Online" | "Presencial" | "Particular" | "Plano";
 type Status = "Em andamento" | "Encerrado";
 
 export default function AbrirProntuario() {
-  const { id, nome } = useLocalSearchParams(); // captura id e nome (se passado)
+  const { id, nome } = useLocalSearchParams();
   const router = useRouter();
 
   const [paciente, setPaciente] = useState("");
+  const [cpf, setCpf] = useState(""); // ✅ CPF adicionado
   const [dataNascimento, setDataNascimento] = useState("");
   const [idade, setIdade] = useState("");
   const [endereco, setEndereco] = useState("");
@@ -43,9 +43,7 @@ export default function AbrirProntuario() {
   const [data, setData] = useState("");
   const [valor, setValor] = useState("");
   const [evolucao, setEvolucao] = useState("");
-  const [tipoAtendimento, setTipoAtendimento] = useState<Atendimento | "">(
-    ""
-  );
+  const [tipoAtendimento, setTipoAtendimento] = useState<Atendimento | "">("");
   const [status, setStatus] = useState<Status | "">("");
   const [mensagemSucesso, setMensagemSucesso] = useState("");
 
@@ -67,13 +65,7 @@ export default function AbrirProntuario() {
     Plano: "#F97316",
   };
 
-  // Atualiza params caso paciente mude (opcional — deixa nome disponível)
-  useEffect(() => {
-    // router.setParams pode ser usado para garantir params, mas não obrigatório
-    // router.setParams({ nome: paciente });
-  }, [paciente]);
-
-  // 🔹 Formatações
+  // 🔹 Funções de formatação
   const formatarHora = (texto: string) => {
     const apenasNumeros = texto.replace(/\D/g, "");
     let formatado = apenasNumeros.slice(0, 4);
@@ -122,7 +114,7 @@ export default function AbrirProntuario() {
     return parseFloat(numeros) || 0;
   };
 
-  // 🔹 Carrega o prontuário atual
+  // 🔹 Carrega os dados do prontuário existente
   useEffect(() => {
     const carregarProntuario = async () => {
       try {
@@ -132,15 +124,12 @@ export default function AbrirProntuario() {
         if (snapshot.exists()) {
           const dados = snapshot.data();
           setPaciente(dados.paciente || "");
+          setCpf(dados.cpf || ""); // ✅ Carrega CPF
           setDataNascimento(dados.dataNascimento || "");
           setIdade(dados.idade || "");
           setEndereco(dados.endereco || "");
           setEmail(dados.email || "");
           setCelular(dados.celular || "");
-          setInicio("");
-          setFim("");
-          setData("");
-          setValor("");
           setEvolucao(dados.evolucao || "");
           setTipoAtendimento(dados.tipoAtendimento || "");
           setStatus(dados.status || "");
@@ -152,7 +141,6 @@ export default function AbrirProntuario() {
         console.error("Erro ao carregar prontuário:", e);
       }
     };
-
     carregarProntuario();
   }, [id]);
 
@@ -161,15 +149,11 @@ export default function AbrirProntuario() {
     try {
       setMensagemSucesso("");
 
-      if (email && !email.includes("@")) {
-        Alert.alert("⚠️ E-mail inválido", "Por favor, insira um e-mail válido.");
-        return;
-      }
-
       const valorAtual = parseValor(valor);
 
       await addDoc(collection(db, "prontuarios"), {
         paciente,
+        cpf, // ✅ CPF incluído no salvamento
         dataNascimento,
         idade,
         endereco,
@@ -189,7 +173,6 @@ export default function AbrirProntuario() {
       setMensagemSucesso("✅ Nova consulta salva com sucesso!");
 
       setTimeout(() => {
-        // navega para histórico do paciente usando pathname + params (tipado)
         router.push({
           pathname: "/prontuarios/historico/[nome]",
           params: { nome: paciente || (nome as string) || "" },
@@ -205,7 +188,6 @@ export default function AbrirProntuario() {
 
   return (
     <>
-      {/* Cabeçalho personalizado com botão de voltar dinâmico */}
       <Stack.Screen
         options={{
           title: "Prontuário",
@@ -233,7 +215,7 @@ export default function AbrirProntuario() {
       />
 
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>📝 Editar Prontuário</Text>
+        <Text style={styles.title}>📝 Nova Consulta</Text>
 
         {/* Tipo de Atendimento */}
         <TouchableOpacity
@@ -277,46 +259,6 @@ export default function AbrirProntuario() {
           </View>
         )}
 
-        {/* Campos principais */}
-        <TextInput
-          style={styles.input}
-          placeholder="Nome do paciente"
-          value={paciente}
-          onChangeText={setPaciente}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Data de nascimento"
-          value={dataNascimento}
-          onChangeText={(t) => setDataNascimento(formatarData(t))}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Idade"
-          value={idade}
-          onChangeText={setIdade}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Endereço"
-          value={endereco}
-          onChangeText={setEndereco}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="E-mail"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Celular do paciente"
-          value={celular}
-          onChangeText={(t) => setCelular(formatarCelular(t))}
-          keyboardType="phone-pad"
-        />
-
         <View style={styles.row}>
           <TextInput
             style={[styles.input, styles.halfInput]}
@@ -345,7 +287,6 @@ export default function AbrirProntuario() {
           onChangeText={(t) => setValor(formatarValor(t))}
           keyboardType="numeric"
         />
-
         <TextInput
           style={[styles.input, styles.textArea]}
           placeholder="Evolução"
@@ -388,7 +329,7 @@ export default function AbrirProntuario() {
         )}
 
         <TouchableOpacity style={styles.button} onPress={salvarAlteracoes}>
-          <Text style={styles.buttonText}>💾 Salvar Alterações</Text>
+          <Text style={styles.buttonText}>💾 Salvar Consulta</Text>
         </TouchableOpacity>
 
         {mensagemSucesso !== "" && (

@@ -27,11 +27,12 @@ type Status = "Em andamento" | "Encerrado";
 
 export default function Prontuarios() {
   const [paciente, setPaciente] = useState("");
+  const [cpf, setCpf] = useState(""); // 🆕 Novo campo CPF
   const [dataNascimento, setDataNascimento] = useState("");
   const [idade, setIdade] = useState("");
   const [endereco, setEndereco] = useState("");
   const [email, setEmail] = useState("");
-  const [celular, setCelular] = useState(""); // 📱 Novo campo
+  const [celular, setCelular] = useState("");
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
   const [data, setData] = useState("");
@@ -101,6 +102,24 @@ export default function Prontuarios() {
     )}-${numeros.slice(7)}`;
   };
 
+  // 🆕 Formata CPF: xxx.xxx.xxx-xx
+  const formatarCpf = (texto: string) => {
+    const numeros = texto.replace(/\D/g, "").slice(0, 11);
+    let formatado = numeros;
+    if (numeros.length > 9)
+      formatado = `${numeros.slice(0, 3)}.${numeros.slice(3, 6)}.${numeros.slice(
+        6,
+        9
+      )}-${numeros.slice(9)}`;
+    else if (numeros.length > 6)
+      formatado = `${numeros.slice(0, 3)}.${numeros.slice(3, 6)}.${numeros.slice(
+        6
+      )}`;
+    else if (numeros.length > 3)
+      formatado = `${numeros.slice(0, 3)}.${numeros.slice(3)}`;
+    return formatado;
+  };
+
   // 🔹 Função principal
   const salvarProntuario = async () => {
     try {
@@ -116,14 +135,15 @@ export default function Prontuarios() {
         return;
       }
 
-      // 🔥 Cria um novo documento no Firestore
+      // 🔥 Salva no Firestore
       await addDoc(collection(db, "prontuarios"), {
         paciente,
+        cpf, // ✅ Adicionado
         dataNascimento,
         idade,
         endereco,
         email,
-        celular, // ✅ Incluído
+        celular,
         inicio,
         fim,
         data,
@@ -137,8 +157,9 @@ export default function Prontuarios() {
       Alert.alert("✅ Sucesso", "Prontuário salvo com sucesso!");
       setMensagemSucesso("✅ Salvo com sucesso!");
 
-      // 🔹 Limpa os campos
+      // 🔹 Limpa campos
       setPaciente("");
+      setCpf("");
       setDataNascimento("");
       setIdade("");
       setEndereco("");
@@ -213,6 +234,13 @@ export default function Prontuarios() {
         placeholder="Nome do paciente"
         value={paciente}
         onChangeText={setPaciente}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="CPF do paciente (xxx.xxx.xxx-xx)"
+        value={cpf}
+        onChangeText={(t) => setCpf(formatarCpf(t))}
+        keyboardType="numeric"
       />
       <TextInput
         style={styles.input}
