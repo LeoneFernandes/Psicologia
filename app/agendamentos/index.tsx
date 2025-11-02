@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
 import { Calendar } from "react-native-calendars";
 
@@ -8,6 +9,18 @@ export default function Agendamentos() {
   const [fim, setFim] = useState("");
   const [paciente, setPaciente] = useState("");
   const [local, setLocal] = useState("");
+  const router = useRouter();
+
+  // 🔒 Proteção de rota
+  useEffect(() => {
+    const logged = localStorage.getItem("userLogged");
+    const timer = setTimeout(() => {
+      if (logged !== "true") {
+        router.replace("/login");
+      }
+    }, 100); // pequeno atraso evita erro de montagem
+    return () => clearTimeout(timer);
+  }, []);
 
   const salvarAgendamento = () => {
     if (!selectedDate) {

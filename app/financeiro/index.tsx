@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router"; // ✅ Import necessário para redirecionar
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { collection, getDocs, getFirestore } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -23,6 +24,7 @@ type Prontuario = {
 };
 
 export default function Financeiro() {
+  const router = useRouter(); // ✅ Necessário para o redirecionamento
   const [prontuarios, setProntuarios] = useState<Prontuario[]>([]);
   const [mesSelecionado, setMesSelecionado] = useState<number>(
     new Date().getMonth() + 1
@@ -46,6 +48,17 @@ export default function Financeiro() {
     "Dezembro",
   ];
 
+  // ✅ Protege a rota — se não estiver logado, volta para /login
+  useEffect(() => {
+    const logged = localStorage.getItem("userLogged");
+    const timer = setTimeout(() => {
+      if (logged !== "true") {
+        router.replace("/login");
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   // 🔹 Busca os prontuários do Firebase
   useEffect(() => {
     const carregarProntuarios = async () => {
@@ -66,11 +79,8 @@ export default function Financeiro() {
           const dataA = new Date(anoA, mesA - 1, diaA);
           const dataB = new Date(anoB, mesB - 1, diaB);
 
-          // Primeiro ordena por data (descendente)
           const diff = dataB.getTime() - dataA.getTime();
           if (diff !== 0) return diff;
-
-          // Se a data for igual, ordena alfabeticamente pelo nome
           return a.paciente.localeCompare(b.paciente, "pt-BR", {
             sensitivity: "base",
           });

@@ -1,7 +1,26 @@
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
+import { useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function OpcaoProntuario() {
+  // 🔒 Proteção de rota (versão ajustada para PWA)
+  useEffect(() => {
+    // Aguarda o ambiente carregar antes de verificar
+    const timer = setTimeout(() => {
+      try {
+        const logged = window?.localStorage?.getItem("userLogged");
+        if (logged !== "true") {
+          router.replace("/login");
+        }
+      } catch (error) {
+        console.error("Erro ao verificar login:", error);
+        router.replace("/login");
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>📋 Prontuários</Text>

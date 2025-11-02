@@ -21,6 +21,17 @@ const db = getFirestore(app);
 export default function ProntuariosCadastrados() {
   const router = useRouter();
 
+  // 🔒 Proteção de rota — impede acesso sem login
+  useEffect(() => {
+    const logged = localStorage.getItem("userLogged");
+    const timer = setTimeout(() => {
+      if (logged !== "true") {
+        router.replace("/login");
+      }
+    }, 100); // pequeno atraso evita erro de renderização
+    return () => clearTimeout(timer);
+  }, []);
+
   const [prontuarios, setProntuarios] = useState<any[]>([]);
   const [pacientesUnicos, setPacientesUnicos] = useState<any[]>([]);
   const [carregando, setCarregando] = useState(true);

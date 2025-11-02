@@ -41,6 +41,17 @@ export default function HistoricoPaciente() {
   const [idade, setIdade] = useState("");
   const [endereco, setEndereco] = useState("");
 
+  // 🔒 Proteção de rota (PWA com localStorage)
+  useEffect(() => {
+    const logged = localStorage.getItem("userLogged");
+    const timer = setTimeout(() => {
+      if (logged !== "true") {
+        router.replace("/login");
+      }
+    }, 100); // pequeno atraso evita erro de navegação prematura
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     if (!nome) return;
 
@@ -140,13 +151,11 @@ export default function HistoricoPaciente() {
             )}
           </View>
 
-          {/* Nome */}
           <View style={styles.infoGroupInline}>
             <Text style={styles.label}>🧍 Nome:</Text>
             <Text style={styles.value}>{nome}</Text>
           </View>
 
-          {/* CPF */}
           <View style={styles.infoGroupInline}>
             <Text style={styles.label}>🪪 CPF:</Text>
             {editando ? (
@@ -161,7 +170,6 @@ export default function HistoricoPaciente() {
             )}
           </View>
 
-          {/* Data de nascimento */}
           <View style={styles.infoGroupInline}>
             <Text style={styles.label}>🎂 Data de Nascimento:</Text>
             {editando ? (
@@ -176,7 +184,6 @@ export default function HistoricoPaciente() {
             )}
           </View>
 
-          {/* Idade */}
           <View style={styles.infoGroupInline}>
             <Text style={styles.label}>📅 Idade:</Text>
             {editando ? (
@@ -192,7 +199,6 @@ export default function HistoricoPaciente() {
             )}
           </View>
 
-          {/* Endereço */}
           <View style={styles.infoGroupInline}>
             <Text style={styles.label}>🏠 Endereço:</Text>
             {editando ? (
@@ -207,7 +213,6 @@ export default function HistoricoPaciente() {
             )}
           </View>
 
-          {/* Email */}
           <View style={styles.infoGroupInline}>
             <Text style={styles.label}>✉️ Email:</Text>
             {editando ? (
@@ -222,7 +227,6 @@ export default function HistoricoPaciente() {
             )}
           </View>
 
-          {/* Telefone */}
           <View style={styles.infoGroupInline}>
             <Text style={styles.label}>📞 Telefone:</Text>
             {editando ? (
@@ -271,7 +275,6 @@ export default function HistoricoPaciente() {
         </View>
       </View>
 
-      {/* 🔹 Botão Nova Consulta */}
       <TouchableOpacity
         style={styles.novaConsultaButton}
         onPress={() =>
@@ -281,7 +284,6 @@ export default function HistoricoPaciente() {
         <Text style={styles.novaConsultaText}>🩺 Nova Consulta</Text>
       </TouchableOpacity>
 
-      {/* 🔹 Lista de Prontuários */}
       <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Prontuários Registrados</Text>
 
       {consultas.length === 0 ? (

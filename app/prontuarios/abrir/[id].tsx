@@ -31,8 +31,19 @@ export default function AbrirProntuario() {
   const { id, nome } = useLocalSearchParams();
   const router = useRouter();
 
+  // ✅ Protege a rota — impede acesso direto sem login
+  useEffect(() => {
+    const logged = localStorage.getItem("userLogged");
+    const timer = setTimeout(() => {
+      if (logged !== "true") {
+        router.replace("/login");
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [paciente, setPaciente] = useState("");
-  const [cpf, setCpf] = useState(""); // ✅ CPF adicionado
+  const [cpf, setCpf] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
   const [idade, setIdade] = useState("");
   const [endereco, setEndereco] = useState("");
@@ -50,12 +61,7 @@ export default function AbrirProntuario() {
   const [mostrarOpcoes, setMostrarOpcoes] = useState(false);
   const [mostrarStatus, setMostrarStatus] = useState(false);
 
-  const opcoes: Atendimento[] = [
-    "Online",
-    "Presencial",
-    "Particular",
-    "Plano",
-  ];
+  const opcoes: Atendimento[] = ["Online", "Presencial", "Particular", "Plano"];
   const opcoesStatus: Status[] = ["Em andamento", "Encerrado"];
 
   const cores: Record<Atendimento, string> = {
@@ -65,7 +71,6 @@ export default function AbrirProntuario() {
     Plano: "#F97316",
   };
 
-  // 🔹 Funções de formatação
   const formatarHora = (texto: string) => {
     const apenasNumeros = texto.replace(/\D/g, "");
     let formatado = apenasNumeros.slice(0, 4);
@@ -114,7 +119,6 @@ export default function AbrirProntuario() {
     return parseFloat(numeros) || 0;
   };
 
-  // 🔹 Carrega os dados do prontuário existente
   useEffect(() => {
     const carregarProntuario = async () => {
       try {
@@ -124,7 +128,7 @@ export default function AbrirProntuario() {
         if (snapshot.exists()) {
           const dados = snapshot.data();
           setPaciente(dados.paciente || "");
-          setCpf(dados.cpf || ""); // ✅ Carrega CPF
+          setCpf(dados.cpf || "");
           setDataNascimento(dados.dataNascimento || "");
           setIdade(dados.idade || "");
           setEndereco(dados.endereco || "");
@@ -144,16 +148,14 @@ export default function AbrirProntuario() {
     carregarProntuario();
   }, [id]);
 
-  // 🔹 Salva nova consulta
   const salvarAlteracoes = async () => {
     try {
       setMensagemSucesso("");
-
       const valorAtual = parseValor(valor);
 
       await addDoc(collection(db, "prontuarios"), {
         paciente,
-        cpf, // ✅ CPF incluído no salvamento
+        cpf,
         dataNascimento,
         idade,
         endereco,
@@ -217,7 +219,6 @@ export default function AbrirProntuario() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>📝 Nova Consulta</Text>
 
-        {/* Tipo de Atendimento */}
         <TouchableOpacity
           style={[
             styles.dropdown,
@@ -296,7 +297,6 @@ export default function AbrirProntuario() {
           numberOfLines={6}
         />
 
-        {/* Status */}
         <TouchableOpacity
           style={[styles.dropdown, { borderColor: "#aaa" }]}
           onPress={() => setMostrarStatus(!mostrarStatus)}

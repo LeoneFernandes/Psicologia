@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { getApp, getApps, initializeApp } from "firebase/app";
 import {
   addDoc,
@@ -5,7 +6,7 @@ import {
   getFirestore,
   serverTimestamp,
 } from "firebase/firestore";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -26,8 +27,24 @@ type Atendimento = "Online" | "Presencial" | "Particular" | "Plano";
 type Status = "Em andamento" | "Encerrado";
 
 export default function Prontuarios() {
+  // 🔒 Proteção de rota (versão ajustada para PWA)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const logged = window?.localStorage?.getItem("userLogged");
+        if (logged !== "true") {
+          router.replace("/login");
+        }
+      } catch (error) {
+        console.error("Erro ao verificar login:", error);
+        router.replace("/login");
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   const [paciente, setPaciente] = useState("");
-  const [cpf, setCpf] = useState(""); // 🆕 Novo campo CPF
+  const [cpf, setCpf] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
   const [idade, setIdade] = useState("");
   const [endereco, setEndereco] = useState("");
@@ -86,7 +103,6 @@ export default function Prontuarios() {
     return "R$ " + numero.replace(".", ",");
   };
 
-  // 📱 Formata celular: (xx) x xxxx-xxxx
   const formatarCelular = (texto: string) => {
     const numeros = texto.replace(/\D/g, "").slice(0, 11);
     if (numeros.length <= 2) return `(${numeros}`;
@@ -102,7 +118,6 @@ export default function Prontuarios() {
     )}-${numeros.slice(7)}`;
   };
 
-  // 🆕 Formata CPF: xxx.xxx.xxx-xx
   const formatarCpf = (texto: string) => {
     const numeros = texto.replace(/\D/g, "").slice(0, 11);
     let formatado = numeros;
@@ -135,10 +150,9 @@ export default function Prontuarios() {
         return;
       }
 
-      // 🔥 Salva no Firestore
       await addDoc(collection(db, "prontuarios"), {
         paciente,
-        cpf, // ✅ Adicionado
+        cpf,
         dataNascimento,
         idade,
         endereco,
@@ -157,7 +171,6 @@ export default function Prontuarios() {
       Alert.alert("✅ Sucesso", "Prontuário salvo com sucesso!");
       setMensagemSucesso("✅ Salvo com sucesso!");
 
-      // 🔹 Limpa campos
       setPaciente("");
       setCpf("");
       setDataNascimento("");
