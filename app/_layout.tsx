@@ -1,4 +1,5 @@
 // app/_layout.tsx
+import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack, router } from "expo-router";
@@ -6,15 +7,25 @@ import { StatusBar } from "expo-status-bar";
 import { TouchableOpacity } from "react-native";
 import "react-native-reanimated";
 
-import { useColorScheme } from "@/hooks/use-color-scheme";
-
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
-        {/* Home / Início */}
+        {/* Tela de Login */}
+        <Stack.Screen
+          name="login"
+          options={{
+            title: "Login",
+            headerStyle: { backgroundColor: "#4F46E5" },
+            headerTintColor: "#fff",
+            headerTitleAlign: "center",
+            headerLeft: () => null,
+          }}
+        />
+
+        {/* Tela inicial (Home) */}
         <Stack.Screen
           name="index"
           options={{
@@ -23,7 +34,15 @@ export default function RootLayout() {
           }}
         />
 
-        {/* Prontuários - menu de opções */}
+        {/* Tela de carregamento (Start) */}
+        <Stack.Screen
+          name="start"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        {/* Demais telas */}
         <Stack.Screen
           name="prontuarios/opcao/index"
           options={{
@@ -43,8 +62,6 @@ export default function RootLayout() {
             ),
           }}
         />
-
-        {/* Criar prontuário (formulário) */}
         <Stack.Screen
           name="prontuarios/index"
           options={{
@@ -64,8 +81,6 @@ export default function RootLayout() {
             ),
           }}
         />
-
-        {/* Prontuários cadastrados */}
         <Stack.Screen
           name="prontuarios/cadastrados/index"
           options={{
@@ -85,8 +100,6 @@ export default function RootLayout() {
             ),
           }}
         />
-
-        {/* Abrir prontuário (detalhes e edição) */}
         <Stack.Screen
           name="prontuarios/abrir/[id]"
           options={{
@@ -106,8 +119,6 @@ export default function RootLayout() {
             ),
           }}
         />
-
-        {/* Histórico do Paciente */}
         <Stack.Screen
           name="prontuarios/historico/[nome]"
           options={{
@@ -127,8 +138,6 @@ export default function RootLayout() {
             ),
           }}
         />
-
-        {/* Agendamentos */}
         <Stack.Screen
           name="agendamentos/index"
           options={{
@@ -148,8 +157,6 @@ export default function RootLayout() {
             ),
           }}
         />
-
-        {/* Financeiro */}
         <Stack.Screen
           name="financeiro/index"
           options={{
