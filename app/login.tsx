@@ -1,7 +1,9 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
   Image,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -9,45 +11,119 @@ import {
   View,
 } from "react-native";
 
+import { FirebaseError } from "firebase/app";
+import {
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { auth } from "../config/firebaseConfig";
+
+const showAlert = (titulo: string, msg: string) => {
+  if (Platform.OS === "web") {
+    window.alert(`${titulo}\n\n${msg}`);
+  } else {
+    Alert.alert(titulo, msg);
+  }
+};
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
 
-  const handleLogin = () => {
-    console.log("🔹 Botão clicado!");
-
+  const handleLogin = async () => {
     if (!email || !senha) {
-      console.log("⚠️ Campos vazios");
-      alert("⚠️ Preencha todos os campos.");
+      showAlert("Atenção", "⚠️ Preencha todos os campos.");
       return;
     }
 
-    if (email === "mirian@psicologia.com" && senha === "123456") {
-      console.log("✅ Login bem-sucedido");
-      alert("✅ Bem-vinda, Mirian!");
+    console.log("🟡 Iniciando login...");
 
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, senha);
+      console.log("🟢 Login realizado no Firebase!");
+      console.log("👤 Usuário logado:", cred.user);
+
+      // ✅ Grava o login localmente para manter o acesso
       localStorage.setItem("userLogged", "true");
 
+      showAlert("Sucesso", "✅ Login realizado com sucesso!");
+      console.log("➡️ Redirecionando para Home...");
+
+      // ✅ Redireciona de forma segura para a Home (index.tsx)
       setTimeout(() => {
-        console.log("➡️ Redirecionando para Home...");
-        router.replace("/");
-      }, 800);
-    } else {
-      console.log("❌ Email ou senha incorretos");
-      alert("❌ Email ou senha incorretos.");
+        try {
+          router.replace("/");
+          console.log("✅ router.replace('/') executado");
+        } catch (e) {
+          console.warn("⚠️ router.replace('/') falhou:", e);
+        }
+      }, 300);
+    } catch (err: unknown) {
+      console.error("Erro no login:", err);
+
+      if (err instanceof FirebaseError) {
+        console.log("🔍 Código do erro Firebase:", err.code);
+
+        switch (err.code) {
+          case "auth/invalid-credential":
+          case "auth/invalid-login-credentials":
+            showAlert("Erro", "❌ E-mail ou senha incorretos.");
+            break;
+          case "auth/user-not-found":
+            showAlert("Erro", "❌ Usuário não encontrado.");
+            break;
+          case "auth/invalid-email":
+            showAlert("Erro", "❌ E-mail inválido.");
+            break;
+          case "auth/network-request-failed":
+            showAlert("Erro", "🌐 Falha de conexão com o servidor.");
+            break;
+          default:
+            showAlert("Erro", `❌ Erro desconhecido: ${err.code}`);
+        }
+      } else {
+        showAlert("Erro", "❌ Ocorreu um erro inesperado. Tente novamente.");
+      }
     }
   };
 
-  const handleForgotPassword = () => {
-    // ⚠️ Compatível com PWA
-    window.alert(
-      "Recuperação de senha ainda não disponível.\nEntre em contato com o suporte."
-    );
+  const handleForgotPassword = async () => {
+    if (!email) {
+      showAlert("Atenção", "⚠️ Informe seu e-mail para recuperar a senha.");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      showAlert(
+        "Sucesso",
+        "📧 E-mail de recuperação enviado! Verifique sua caixa de entrada."
+      );
+    } catch (err: unknown) {
+      console.error("Erro ao enviar e-mail de redefinição:", err);
+
+      if (err instanceof FirebaseError) {
+        switch (err.code) {
+          case "auth/user-not-found":
+            showAlert("Erro", "❌ Nenhuma conta encontrada com este e-mail.");
+            break;
+          case "auth/invalid-email":
+            showAlert("Erro", "❌ E-mail inválido. Verifique e tente novamente.");
+            break;
+          default:
+            showAlert(
+              "Erro",
+              `❌ Não foi possível enviar o e-mail (${err.code}). Tente novamente mais tarde.`
+            );
+        }
+      } else {
+        showAlert("Erro", "❌ Ocorreu um erro inesperado. Tente novamente.");
+      }
+    }
   };
 
   return (
     <View style={styles.container}>
-      {/* Foto da psicóloga */}
       <Image
         source={require("../assets/images/mirian2.jpg")}
         style={styles.image}
@@ -74,12 +150,20 @@ export default function Login() {
           secureTextEntry
         />
 
-        {/* Link de esqueci a senha */}
         <TouchableOpacity onPress={handleForgotPassword}>
           <Text style={styles.forgotText}>Esqueceu sua senha?</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={(e) => {
+            e.preventDefault?.();
+            e.stopPropagation?.();
+            console.log("✅ Clique detectado — executando login...");
+            handleLogin();
+          }}
+          {...(Platform.OS === "web" ? { type: "button" } : {})}
+        >
           <Text style={styles.buttonText}>Entrar</Text>
         </TouchableOpacity>
       </View>
@@ -138,7 +222,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
     width: 300,
     textDecorationLine: "underline",
-    cursor: "pointer", // funciona bem no PWA
+    ...(Platform.OS === "web" ? { cursor: "pointer" } : {}),
   },
   button: {
     backgroundColor: "#4F46E5",

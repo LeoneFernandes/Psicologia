@@ -1,17 +1,13 @@
 // app/_layout.tsx
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
-import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { TouchableOpacity } from "react-native";
 import "react-native-reanimated";
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <>
       <Stack>
         {/* Tela de Login */}
         <Stack.Screen
@@ -21,7 +17,7 @@ export default function RootLayout() {
             headerStyle: { backgroundColor: "#4F46E5" },
             headerTintColor: "#fff",
             headerTitleAlign: "center",
-            headerLeft: () => null,
+            headerLeft: () => null, // impede voltar antes de logar
           }}
         />
 
@@ -30,7 +26,7 @@ export default function RootLayout() {
           name="index"
           options={{
             title: "",
-            headerShown: false,
+            headerShown: false, // home sem cabeçalho
           }}
         />
 
@@ -42,7 +38,7 @@ export default function RootLayout() {
           }}
         />
 
-        {/* Demais telas */}
+        {/* --- PRONTUÁRIOS --- */}
         <Stack.Screen
           name="prontuarios/opcao/index"
           options={{
@@ -62,6 +58,7 @@ export default function RootLayout() {
             ),
           }}
         />
+
         <Stack.Screen
           name="prontuarios/index"
           options={{
@@ -81,6 +78,7 @@ export default function RootLayout() {
             ),
           }}
         />
+
         <Stack.Screen
           name="prontuarios/cadastrados/index"
           options={{
@@ -100,6 +98,7 @@ export default function RootLayout() {
             ),
           }}
         />
+
         <Stack.Screen
           name="prontuarios/abrir/[id]"
           options={{
@@ -108,7 +107,9 @@ export default function RootLayout() {
             headerTintColor: "#fff",
             headerTitleAlign: "center",
             headerLeft: () => (
-              <TouchableOpacity onPress={() => router.push("/prontuarios/cadastrados")}>
+              <TouchableOpacity
+                onPress={() => router.push("/prontuarios/cadastrados")}
+              >
                 <Ionicons
                   name="arrow-back"
                   size={24}
@@ -119,6 +120,7 @@ export default function RootLayout() {
             ),
           }}
         />
+
         <Stack.Screen
           name="prontuarios/historico/[nome]"
           options={{
@@ -127,7 +129,9 @@ export default function RootLayout() {
             headerTintColor: "#fff",
             headerTitleAlign: "center",
             headerLeft: () => (
-              <TouchableOpacity onPress={() => router.push("/prontuarios/cadastrados")}>
+              <TouchableOpacity
+                onPress={() => router.push("/prontuarios/cadastrados")}
+              >
                 <Ionicons
                   name="arrow-back"
                   size={24}
@@ -138,6 +142,8 @@ export default function RootLayout() {
             ),
           }}
         />
+
+        {/* --- AGENDAMENTOS --- */}
         <Stack.Screen
           name="agendamentos/index"
           options={{
@@ -157,6 +163,8 @@ export default function RootLayout() {
             ),
           }}
         />
+
+        {/* --- FINANCEIRO --- */}
         <Stack.Screen
           name="financeiro/index"
           options={{
@@ -176,9 +184,30 @@ export default function RootLayout() {
             ),
           }}
         />
+
+        {/* --- CONFIGURAÇÃO --- */}
+        <Stack.Screen
+          name="configuracao/index"
+          options={{
+            title: "Configurações",
+            headerStyle: { backgroundColor: "#4F46E5" },
+            headerTintColor: "#fff",
+            headerTitleAlign: "center",
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.push("/")}>
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color="#fff"
+                  style={{ marginLeft: 10 }}
+                />
+              </TouchableOpacity>
+            ),
+          }}
+        />
       </Stack>
 
       <StatusBar style="auto" />
-    </ThemeProvider>
+    </>
   );
 }

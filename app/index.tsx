@@ -1,4 +1,4 @@
-import { Link, Redirect, router } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -11,16 +11,17 @@ export default function Home() {
   }, []);
 
   if (isLogged === null) return null;
-
   if (!isLogged) return <Redirect href="/login" />;
 
   return <HomeScreenContent />;
 }
 
 /*
-  Tela principal da psicóloga Mirian
+  Tela principal da psicóloga Mirian Matos
 */
 export function HomeScreenContent() {
+  const router = useRouter();
+
   const handleLogout = () => {
     localStorage.removeItem("userLogged");
     router.replace("/login");
@@ -37,23 +38,34 @@ export function HomeScreenContent() {
       <Text style={styles.subtitle}>Escolha uma opção:</Text>
 
       <View style={styles.menu}>
-        <Link href="/prontuarios/opcao" asChild>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>📋 Prontuários</Text>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/prontuarios/opcao")}
+        >
+          <Text style={styles.buttonText}>📋 Prontuários</Text>
+        </TouchableOpacity>
 
-        <Link href="/agendamentos" asChild>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>📅 Agendamentos</Text>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/agendamentos")}
+        >
+          <Text style={styles.buttonText}>📅 Agendamentos</Text>
+        </TouchableOpacity>
 
-        <Link href="/financeiro" asChild>
-          <TouchableOpacity style={styles.button}>
-            <Text style={styles.buttonText}>💰 Financeiro</Text>
-          </TouchableOpacity>
-        </Link>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push("/financeiro")}
+        >
+          <Text style={styles.buttonText}>💰 Financeiro</Text>
+        </TouchableOpacity>
+
+        {/* ⚙️ Botão de Configuração */}
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: "#10B981" }]}
+          onPress={() => router.push("/configuracao")}
+        >
+          <Text style={styles.buttonText}>⚙️ Configurações</Text>
+        </TouchableOpacity>
 
         {/* Texto "Sair" discreto */}
         <TouchableOpacity onPress={handleLogout}>
@@ -112,7 +124,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   logoutText: {
-    color: "#dc2626", // vermelho mais suave
+    color: "#dc2626",
     fontSize: 16,
     fontWeight: "500",
     marginTop: 20,

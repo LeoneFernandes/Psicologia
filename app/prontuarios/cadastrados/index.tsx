@@ -1,6 +1,6 @@
+// app/prontuarios/cadastrados/index.js
 import { useRouter } from "expo-router";
-import { getApp, getApps, initializeApp } from "firebase/app";
-import { collection, deleteDoc, doc, getFirestore, onSnapshot } from "firebase/firestore";
+import { collection, deleteDoc, doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,10 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { firebaseConfig } from "../../../config/firebaseConfig";
-
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+import { db } from "../../../config/firebaseConfig"; // ✅ importando direto o db, nada de initializeApp
 
 export default function ProntuariosCadastrados() {
   const router = useRouter();
@@ -28,12 +25,12 @@ export default function ProntuariosCadastrados() {
       if (logged !== "true") {
         router.replace("/login");
       }
-    }, 100); // pequeno atraso evita erro de renderização
+    }, 100);
     return () => clearTimeout(timer);
   }, []);
 
-  const [prontuarios, setProntuarios] = useState<any[]>([]);
-  const [pacientesUnicos, setPacientesUnicos] = useState<any[]>([]);
+  const [prontuarios, setProntuarios] = useState([]);
+  const [pacientesUnicos, setPacientesUnicos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [busca, setBusca] = useState("");
 
@@ -41,7 +38,7 @@ export default function ProntuariosCadastrados() {
     const unsubscribe = onSnapshot(
       collection(db, "prontuarios"),
       (querySnapshot) => {
-        const lista: any[] = [];
+        const lista = [];
         querySnapshot.forEach((d) => lista.push({ id: d.id, ...d.data() }));
 
         // 🔹 Agrupa por nome do paciente
@@ -50,7 +47,6 @@ export default function ProntuariosCadastrados() {
           const nome = p.paciente?.trim();
           if (!nome) return;
 
-          // mantém o prontuário mais recente (pela data)
           if (!pacientesMap.has(nome)) {
             pacientesMap.set(nome, p);
           } else {
@@ -78,7 +74,7 @@ export default function ProntuariosCadastrados() {
     return () => unsubscribe();
   }, []);
 
-  const excluirProntuariosDoPaciente = async (nome: string) => {
+  const excluirProntuariosDoPaciente = (nome) => {
     const confirmar = () => {
       const texto = `Tem certeza que deseja excluir todos os prontuários de ${nome}?`;
       if (Platform.OS === "web") {
@@ -95,7 +91,7 @@ export default function ProntuariosCadastrados() {
     confirmar();
   };
 
-  const executarExclusao = async (nome: string) => {
+  const executarExclusao = async (nome) => {
     try {
       const registros = prontuarios.filter((p) => p.paciente === nome);
       for (const reg of registros) {
@@ -108,7 +104,7 @@ export default function ProntuariosCadastrados() {
     }
   };
 
-  const abrirHistorico = (nome: string) => {
+  const abrirHistorico = (nome) => {
     if (!nome) return;
     router.push({
       pathname: "/prontuarios/historico/[nome]",
@@ -133,7 +129,6 @@ export default function ProntuariosCadastrados() {
     <View style={styles.container}>
       <Text style={styles.title}>👥 Pacientes Cadastrados</Text>
 
-      {/* 🔹 Mostra a contagem de pacientes */}
       <Text style={styles.countText}>
         Total de pacientes: {pacientesUnicos.length}
       </Text>
