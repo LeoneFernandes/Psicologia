@@ -1,4 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { FirebaseError } from "firebase/app";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
 import {
   Alert,
@@ -9,13 +12,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
-
-import { FirebaseError } from "firebase/app";
-import {
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
 import { auth } from "../config/firebaseConfig";
 
 const showAlert = (titulo: string, msg: string) => {
@@ -27,8 +25,12 @@ const showAlert = (titulo: string, msg: string) => {
 };
 
 export default function Login() {
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width > 600; // notebook ou tablet
+
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !senha) {
@@ -36,34 +38,13 @@ export default function Login() {
       return;
     }
 
-    console.log("🟡 Iniciando login...");
-
     try {
       const cred = await signInWithEmailAndPassword(auth, email, senha);
-      console.log("🟢 Login realizado no Firebase!");
-      console.log("👤 Usuário logado:", cred.user);
-
-      // ✅ Grava o login localmente para manter o acesso
       localStorage.setItem("userLogged", "true");
-
       showAlert("Sucesso", "✅ Login realizado com sucesso!");
-      console.log("➡️ Redirecionando para Home...");
-
-      // ✅ Redireciona de forma segura para a Home (index.tsx)
-      setTimeout(() => {
-        try {
-          router.replace("/");
-          console.log("✅ router.replace('/') executado");
-        } catch (e) {
-          console.warn("⚠️ router.replace('/') falhou:", e);
-        }
-      }, 300);
+      setTimeout(() => router.replace("/"), 300);
     } catch (err: unknown) {
-      console.error("Erro no login:", err);
-
       if (err instanceof FirebaseError) {
-        console.log("🔍 Código do erro Firebase:", err.code);
-
         switch (err.code) {
           case "auth/invalid-credential":
           case "auth/invalid-login-credentials":
@@ -87,52 +68,20 @@ export default function Login() {
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      showAlert("Atenção", "⚠️ Informe seu e-mail para recuperar a senha.");
-      return;
-    }
-
-    try {
-      await sendPasswordResetEmail(auth, email);
-      showAlert(
-        "Sucesso",
-        "📧 E-mail de recuperação enviado! Verifique sua caixa de entrada."
-      );
-    } catch (err: unknown) {
-      console.error("Erro ao enviar e-mail de redefinição:", err);
-
-      if (err instanceof FirebaseError) {
-        switch (err.code) {
-          case "auth/user-not-found":
-            showAlert("Erro", "❌ Nenhuma conta encontrada com este e-mail.");
-            break;
-          case "auth/invalid-email":
-            showAlert("Erro", "❌ E-mail inválido. Verifique e tente novamente.");
-            break;
-          default:
-            showAlert(
-              "Erro",
-              `❌ Não foi possível enviar o e-mail (${err.code}). Tente novamente mais tarde.`
-            );
-        }
-      } else {
-        showAlert("Erro", "❌ Ocorreu um erro inesperado. Tente novamente.");
-      }
-    }
-  };
+  const inputWidth = isLargeScreen ? 400 : "90%";
 
   return (
     <View style={styles.container}>
       <Image
         source={require("../assets/images/mirian2.jpg")}
         style={styles.image}
+        resizeMode="cover"
       />
 
       <Text style={styles.title}>🧠 Psicóloga Mirian Matos</Text>
       <Text style={styles.subtitle}>Acesse sua conta</Text>
 
-      <View style={styles.form}>
+      <View style={[styles.form, { width: inputWidth }]}>
         <TextInput
           style={styles.input}
           placeholder="Digite seu e-mail"
@@ -142,26 +91,35 @@ export default function Login() {
           autoCapitalize="none"
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Digite sua senha"
-          value={senha}
-          onChangeText={setSenha}
-          secureTextEntry
-        />
+        {/* Campo de senha com olhinho */}
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={[styles.input, { flex: 1, borderWidth: 0, marginBottom: 0 }]}
+            placeholder="Digite sua senha"
+            value={senha}
+            onChangeText={setSenha}
+            secureTextEntry={!mostrarSenha}
+          />
+          <TouchableOpacity
+            onPress={() => setMostrarSenha(!mostrarSenha)}
+            style={styles.eyeIcon}
+          >
+            <Ionicons
+              name={mostrarSenha ? "eye-off" : "eye"}
+              size={22}
+              color="#000"
+            />
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity onPress={handleForgotPassword}>
+        {/* 🔗 Novo link de recuperação de senha */}
+        <TouchableOpacity onPress={() => router.push("/recuperar/recuperar-senha")}>
           <Text style={styles.forgotText}>Esqueceu sua senha?</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.button}
-          onPress={(e) => {
-            e.preventDefault?.();
-            e.stopPropagation?.();
-            console.log("✅ Clique detectado — executando login...");
-            handleLogin();
-          }}
+          onPress={handleLogin}
           {...(Platform.OS === "web" ? { type: "button" } : {})}
         >
           <Text style={styles.buttonText}>Entrar</Text>
@@ -177,7 +135,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f3f4f6",
-    padding: 20,
+    paddingHorizontal: 20,
   },
   image: {
     width: 120,
@@ -204,7 +162,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   input: {
-    width: 300,
+    width: "100%",
     backgroundColor: "#fff",
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -214,13 +172,29 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 16,
   },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    marginBottom: 12,
+  },
+  eyeIcon: {
+    padding: 2,
+    opacity: 0.3,
+    marginRight: 8,
+    ...(Platform.OS === "web" ? { cursor: "pointer" } : {}),
+  },
   forgotText: {
     color: "#4F46E5",
     fontSize: 14,
     fontWeight: "500",
     marginBottom: 15,
     textAlign: "right",
-    width: 300,
+    width: "100%",
     textDecorationLine: "underline",
     ...(Platform.OS === "web" ? { cursor: "pointer" } : {}),
   },
@@ -228,7 +202,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4F46E5",
     paddingVertical: 12,
     borderRadius: 10,
-    width: 300,
+    width: "100%",
     alignItems: "center",
   },
   buttonText: {

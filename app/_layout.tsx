@@ -21,6 +21,27 @@ export default function RootLayout() {
           }}
         />
 
+        {/* Tela de Recuperar Senha */}
+        <Stack.Screen
+          name="recuperar/recuperar-senha"
+          options={{
+            title: "Recuperar Senha",
+            headerStyle: { backgroundColor: "#4F46E5" },
+            headerTintColor: "#fff",
+            headerTitleAlign: "center",
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.push("/login")}>
+                <Ionicons
+                  name="arrow-back"
+                  size={24}
+                  color="#fff"
+                  style={{ marginLeft: 10 }}
+                />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+
         {/* Tela inicial (Home) */}
         <Stack.Screen
           name="index"
