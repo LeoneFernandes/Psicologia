@@ -1,9 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { getApp, getApps, initializeApp } from "firebase/app";
 import {
   collection,
   doc,
-  getFirestore,
   onSnapshot,
   query,
   updateDoc,
@@ -20,10 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { firebaseConfig } from "../../../config/firebaseConfig";
-
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+import { db } from "../../../config/firebaseConfig"; // ✅ correção feita aqui
 
 export default function HistoricoPaciente() {
   const { nome } = useLocalSearchParams();
@@ -48,7 +43,7 @@ export default function HistoricoPaciente() {
       if (logged !== "true") {
         router.replace("/login");
       }
-    }, 100); // pequeno atraso evita erro de navegação prematura
+    }, 100);
     return () => clearTimeout(timer);
   }, []);
 
@@ -284,7 +279,7 @@ export default function HistoricoPaciente() {
         <Text style={styles.novaConsultaText}>🩺 Nova Consulta</Text>
       </TouchableOpacity>
 
-      <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Prontuários Registrados</Text>
+      <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Consultas Realizadas:</Text>
 
       {consultas.length === 0 ? (
         <Text style={styles.vazio}>Nenhum prontuário encontrado para este paciente.</Text>
@@ -308,64 +303,139 @@ export default function HistoricoPaciente() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: "#f3f4f6" },
+  container: {
+    padding: 20,
+    backgroundColor: "#f3f4f6",
+    flexGrow: 1,
+    alignItems: "center",
+  },
+
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
-  titulo: { fontSize: 24, fontWeight: "bold", marginBottom: 20, textAlign: "center" },
-  row: { flexDirection: "row", justifyContent: "space-between", flexWrap: "wrap", gap: 10 },
+
+  titulo: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+    color: "#111",
+  },
+
+  // 🔹 Cards principais lado a lado
+  row: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 20,
+    width: "100%",
+    marginBottom: 25,
+  },
+
   dashboardCard: {
     backgroundColor: "#fff",
-    padding: 16,
+    padding: 18,
     borderRadius: 14,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 5,
-    elevation: 3,
-    flex: 1,
-    minWidth: "48%",
+    elevation: 2,
+    width: "45%", // 🟢 ocupa metade da largura no desktop
+    minWidth: 320, // 🟢 mínimo no celular
+    maxWidth: 600, // 🟢 máximo pra não exagerar
   },
+
   headerCard: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 10,
   },
-  sectionTitle: { fontSize: 17, fontWeight: "700", color: "#333" },
+
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#333",
+  },
+
   editButton: {
     backgroundColor: "#E5E7EB",
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 8,
   },
   editText: { fontSize: 13, color: "#111", fontWeight: "600" },
+
   saveButton: {
     backgroundColor: "#10B981",
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 8,
   },
   saveText: { fontSize: 13, color: "#fff", fontWeight: "600" },
-  infoGroupInline: { flexDirection: "row", alignItems: "center", marginBottom: 6, flexWrap: "wrap" },
-  label: { fontSize: 15, color: "#555", fontWeight: "500", marginRight: 6 },
-  value: { fontSize: 15, color: "#111", fontWeight: "600", flexShrink: 1 },
+
+  infoGroupInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+    flexWrap: "wrap",
+  },
+
+  label: {
+    fontSize: 15,
+    color: "#555",
+    fontWeight: "500",
+    marginRight: 6,
+    width: 130,
+  },
+  value: {
+    fontSize: 15,
+    color: "#111",
+    fontWeight: "600",
+    flexShrink: 1,
+  },
   input: {
     borderBottomWidth: 1,
     borderColor: "#ccc",
     paddingVertical: 2,
     fontSize: 15,
-    flex: 1,
     color: "#111",
+    flex: 1,
   },
+
+  // 🔹 Cards de prontuário registrados
   card: {
     backgroundColor: "#fff",
-    padding: 14,
+    padding: 16,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: 14,
     elevation: 2,
+    width: "90%",     // 🟢 ocupa 90% da tela (responsivo)
+    maxWidth: 900,    // 🟢 limite no desktop
+    alignSelf: "center",
   },
-  data: { fontSize: 16, fontWeight: "600", color: "#333", marginBottom: 6 },
+
+  data: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 6,
+  },
+
   texto: { fontSize: 15, color: "#555", marginBottom: 3 },
-  evolucao: { marginTop: 8, fontSize: 14, color: "#444", fontStyle: "italic" },
-  vazio: { textAlign: "center", color: "#666", fontSize: 16, marginTop: 20 },
+
+  evolucao: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#444",
+    fontStyle: "italic",
+  },
+
+  vazio: {
+    textAlign: "center",
+    color: "#666",
+    fontSize: 16,
+    marginTop: 20,
+  },
+
   novaConsultaButton: {
     backgroundColor: "#10B981",
     paddingVertical: 15,
@@ -373,6 +443,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 25,
     marginBottom: 20,
+    width: "90%",
+    maxWidth: 420,
   },
+
   novaConsultaText: { color: "#fff", fontSize: 18, fontWeight: "600" },
 });

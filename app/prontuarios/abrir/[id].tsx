@@ -341,7 +341,12 @@ export default function AbrirProntuario() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: "#f3f4f6", flexGrow: 1 },
+  container: {
+    backgroundColor: "#f3f4f6",
+    flexGrow: 1,
+    alignItems: "center",
+    paddingBottom: 40,
+  },
   title: {
     fontSize: 26,
     fontWeight: "bold",
@@ -356,6 +361,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     marginBottom: 10,
+    width: "100%",
+    maxWidth: 600,
   },
   dropdownText: { fontSize: 16, color: "#555" },
   dropdownTextSelecionado: { color: "#fff", fontWeight: "600" },
@@ -365,6 +372,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     marginBottom: 15,
+    width: "100%",
+    maxWidth: 600,
   },
   opcao: { padding: 14, borderBottomWidth: 1, borderBottomColor: "#eee" },
   opcaoTexto: { fontSize: 16, fontWeight: "500" },
@@ -376,9 +385,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
     fontSize: 16,
+    width: "100%",
+    maxWidth: 600,
   },
-  row: { flexDirection: "row", justifyContent: "space-between" },
-  halfInput: { width: "48%" },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    maxWidth: 600,
+    gap: 10,
+  },
+  halfInput: { flex: 1 },
   textArea: { height: 130, textAlignVertical: "top" },
   button: {
     backgroundColor: "#4F46E5",
@@ -386,6 +403,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     marginTop: 10,
+    width: "100%",
+    maxWidth: 600,
   },
   buttonText: { color: "#fff", fontSize: 18, fontWeight: "600" },
   mensagemSucesso: {

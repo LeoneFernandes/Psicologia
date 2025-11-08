@@ -3,9 +3,8 @@ import { useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function OpcaoProntuario() {
-  // 🔒 Proteção de rota (versão ajustada para PWA)
+  // 🔒 Proteção de rota (PWA segura)
   useEffect(() => {
-    // Aguarda o ambiente carregar antes de verificar
     const timer = setTimeout(() => {
       try {
         const logged = window?.localStorage?.getItem("userLogged");
@@ -17,26 +16,27 @@ export default function OpcaoProntuario() {
         router.replace("/login");
       }
     }, 100);
-
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>📋 Prontuários</Text>
-      <Text style={styles.subtitle}>Escolha uma opção:</Text>
+      <View style={styles.card}>
+        <Text style={styles.title}>📋 Prontuários</Text>
+        <Text style={styles.subtitle}>Escolha uma opção:</Text>
 
-      <Link href="/prontuarios" asChild>
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>🧾 Criar Prontuário Novo</Text>
-        </TouchableOpacity>
-      </Link>
+        <Link href="/prontuarios" asChild>
+          <TouchableOpacity style={styles.button}>
+            <Text style={styles.buttonText}>🧾 Criar Prontuário Novo</Text>
+          </TouchableOpacity>
+        </Link>
 
-      <Link href="/prontuarios/cadastrados" asChild>
-        <TouchableOpacity style={styles.buttonSecondary}>
-          <Text style={styles.buttonText}>📁 Ver Prontuários Cadastrados</Text>
-        </TouchableOpacity>
-      </Link>
+        <Link href="/prontuarios/cadastrados" asChild>
+          <TouchableOpacity style={styles.buttonSecondary}>
+            <Text style={styles.buttonText}>📁 Ver Prontuários Cadastrados</Text>
+          </TouchableOpacity>
+        </Link>
+      </View>
     </View>
   );
 }
@@ -49,16 +49,29 @@ const styles = StyleSheet.create({
     backgroundColor: "#f3f4f6",
     padding: 20,
   },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 30,
+    width: "100%",
+    maxWidth: 400,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
   title: {
     fontSize: 26,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "#333",
+    color: "#1e1e1e",
     textAlign: "center",
   },
   subtitle: {
     fontSize: 18,
-    color: "#666",
+    color: "#555",
     marginBottom: 30,
     textAlign: "center",
   },
@@ -68,7 +81,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 25,
     borderRadius: 12,
     marginBottom: 15,
-    width: "80%",
+    width: "100%",
     alignItems: "center",
   },
   buttonSecondary: {
@@ -76,12 +89,12 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 25,
     borderRadius: 12,
-    width: "80%",
+    width: "100%",
     alignItems: "center",
   },
   buttonText: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "600",
   },
 });

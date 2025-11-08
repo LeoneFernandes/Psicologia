@@ -1,14 +1,10 @@
 import { router } from "expo-router";
-import { getApp, getApps, initializeApp } from "firebase/app";
-import {
-  addDoc,
-  collection,
-  getFirestore,
-  serverTimestamp,
-} from "firebase/firestore";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,33 +12,25 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { firebaseConfig } from "../../config/firebaseConfig";
+import { db } from "../../config/firebaseConfig";
 
-// 🔥 Inicializa Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
-
-// Tipos
 type Atendimento = "Online" | "Presencial" | "Particular" | "Plano";
 type Status = "Em andamento" | "Encerrado";
 
 export default function Prontuarios() {
-  // 🔒 Proteção de rota (versão ajustada para PWA)
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
         const logged = window?.localStorage?.getItem("userLogged");
-        if (logged !== "true") {
-          router.replace("/login");
-        }
-      } catch (error) {
-        console.error("Erro ao verificar login:", error);
+        if (logged !== "true") router.replace("/login");
+      } catch {
         router.replace("/login");
       }
     }, 100);
     return () => clearTimeout(timer);
   }, []);
 
+  // --- estados (sem mudanças) ---
   const [paciente, setPaciente] = useState("");
   const [cpf, setCpf] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
@@ -71,28 +59,21 @@ export default function Prontuarios() {
     Plano: "#F97316",
   };
 
-  // 🔹 Formatações
+  // --- funções de formatação (sem mudanças) ---
   const formatarHora = (texto: string) => {
     const apenasNumeros = texto.replace(/\D/g, "");
     let formatado = apenasNumeros.slice(0, 4);
-    if (formatado.length >= 3) {
-      return `${formatado.slice(0, 2)}h ${formatado.slice(2)}min`;
-    } else if (formatado.length >= 1 && formatado.length <= 2) {
-      return `${formatado}h`;
-    }
+    if (formatado.length >= 3) return `${formatado.slice(0, 2)}h ${formatado.slice(2)}min`;
+    if (formatado.length >= 1 && formatado.length <= 2) return `${formatado}h`;
     return formatado;
   };
 
   const formatarData = (texto: string) => {
     const apenasNumeros = texto.replace(/\D/g, "").slice(0, 8);
-    if (apenasNumeros.length > 4) {
-      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(
-        2,
-        4
-      )}/${apenasNumeros.slice(4)}`;
-    } else if (apenasNumeros.length > 2) {
+    if (apenasNumeros.length > 4)
+      return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2, 4)}/${apenasNumeros.slice(4)}`;
+    if (apenasNumeros.length > 2)
       return `${apenasNumeros.slice(0, 2)}/${apenasNumeros.slice(2)}`;
-    }
     return apenasNumeros;
   };
 
@@ -106,45 +87,32 @@ export default function Prontuarios() {
   const formatarCelular = (texto: string) => {
     const numeros = texto.replace(/\D/g, "").slice(0, 11);
     if (numeros.length <= 2) return `(${numeros}`;
-    if (numeros.length <= 3)
-      return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
+    if (numeros.length <= 3) return `(${numeros.slice(0, 2)}) ${numeros.slice(2)}`;
     if (numeros.length <= 7)
-      return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)} ${numeros.slice(
-        3
-      )}`;
-    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)} ${numeros.slice(
-      3,
-      7
-    )}-${numeros.slice(7)}`;
+      return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)} ${numeros.slice(3)}`;
+    return `(${numeros.slice(0, 2)}) ${numeros.slice(2, 3)} ${numeros.slice(3, 7)}-${numeros.slice(7)}`;
   };
 
   const formatarCpf = (texto: string) => {
     const numeros = texto.replace(/\D/g, "").slice(0, 11);
     let formatado = numeros;
     if (numeros.length > 9)
-      formatado = `${numeros.slice(0, 3)}.${numeros.slice(3, 6)}.${numeros.slice(
-        6,
-        9
-      )}-${numeros.slice(9)}`;
+      formatado = `${numeros.slice(0, 3)}.${numeros.slice(3, 6)}.${numeros.slice(6, 9)}-${numeros.slice(9)}`;
     else if (numeros.length > 6)
-      formatado = `${numeros.slice(0, 3)}.${numeros.slice(3, 6)}.${numeros.slice(
-        6
-      )}`;
+      formatado = `${numeros.slice(0, 3)}.${numeros.slice(3, 6)}.${numeros.slice(6)}`;
     else if (numeros.length > 3)
       formatado = `${numeros.slice(0, 3)}.${numeros.slice(3)}`;
     return formatado;
   };
 
-  // 🔹 Função principal
+  // --- função de salvar (inalterada) ---
   const salvarProntuario = async () => {
     try {
       setMensagemSucesso("");
-
       if (!paciente.trim() || !data.trim()) {
         Alert.alert("⚠️ Campos obrigatórios", "Preencha o nome e a data.");
         return;
       }
-
       if (email && !email.includes("@")) {
         Alert.alert("⚠️ E-mail inválido", "Insira um e-mail válido.");
         return;
@@ -185,7 +153,6 @@ export default function Prontuarios() {
       setEvolucao("");
       setTipoAtendimento("");
       setStatus("");
-
       setTimeout(() => setMensagemSucesso(""), 4000);
     } catch (error) {
       console.error("Erro ao salvar prontuário:", error);
@@ -195,190 +162,123 @@ export default function Prontuarios() {
 
   const corSelecionada = tipoAtendimento ? cores[tipoAtendimento] : undefined;
 
+  // --- layout responsivo ---
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>📋 Prontuário</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={{ flex: 1 }}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.card}>
+          <Text style={styles.title}>📋 Prontuário</Text>
 
-      {/* Tipo de Atendimento */}
-      <TouchableOpacity
-        style={[
-          styles.dropdown,
-          corSelecionada && {
-            backgroundColor: corSelecionada,
-            borderColor: corSelecionada,
-          },
-        ]}
-        onPress={() => setMostrarOpcoes(!mostrarOpcoes)}
-      >
-        <Text
-          style={[
-            styles.dropdownText,
-            tipoAtendimento && styles.dropdownTextSelecionado,
-          ]}
-        >
-          {tipoAtendimento
-            ? `Tipo de Atendimento: ${tipoAtendimento}`
-            : "Selecione o tipo de atendimento"}
-        </Text>
-      </TouchableOpacity>
-
-      {mostrarOpcoes && (
-        <View style={styles.opcoesContainer}>
-          {opcoes.map((opcao) => (
-            <TouchableOpacity
-              key={opcao}
-              style={styles.opcao}
-              onPress={() => {
-                setTipoAtendimento(opcao);
-                setMostrarOpcoes(false);
-              }}
+          {/* Tipo de Atendimento */}
+          <TouchableOpacity
+            style={[
+              styles.dropdown,
+              corSelecionada && { backgroundColor: corSelecionada, borderColor: corSelecionada },
+            ]}
+            onPress={() => setMostrarOpcoes(!mostrarOpcoes)}
+          >
+            <Text
+              style={[
+                styles.dropdownText,
+                tipoAtendimento && styles.dropdownTextSelecionado,
+              ]}
             >
-              <Text style={[styles.opcaoTexto, { color: cores[opcao] }]}>
-                {opcao}
-              </Text>
-            </TouchableOpacity>
-          ))}
+              {tipoAtendimento
+                ? `Tipo de Atendimento: ${tipoAtendimento}`
+                : "Selecione o tipo de atendimento"}
+            </Text>
+          </TouchableOpacity>
+
+          {mostrarOpcoes && (
+            <View style={styles.opcoesContainer}>
+              {opcoes.map((opcao) => (
+                <TouchableOpacity
+                  key={opcao}
+                  style={styles.opcao}
+                  onPress={() => {
+                    setTipoAtendimento(opcao);
+                    setMostrarOpcoes(false);
+                  }}
+                >
+                  <Text style={[styles.opcaoTexto, { color: cores[opcao] }]}>
+                    {opcao}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* Inputs */}
+          <TextInput style={styles.input} placeholder="Nome do paciente" value={paciente} onChangeText={setPaciente} />
+          <TextInput style={styles.input} placeholder="CPF do paciente (xxx.xxx.xxx-xx)" value={cpf} onChangeText={(t) => setCpf(formatarCpf(t))} keyboardType="numeric" />
+          <TextInput style={styles.input} placeholder="Data de nascimento ex: 00/00/0000" value={dataNascimento} onChangeText={(t) => setDataNascimento(formatarData(t))} keyboardType="numeric" />
+          <TextInput style={styles.input} placeholder="Idade" value={idade} onChangeText={setIdade} keyboardType="numeric" />
+          <TextInput style={styles.input} placeholder="Endereço" value={endereco} onChangeText={setEndereco} />
+          <TextInput style={styles.input} placeholder="E-mail do paciente" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+          <TextInput style={styles.input} placeholder="Celular ex: (xx) x xxxx-xxxx" value={celular} onChangeText={(t) => setCelular(formatarCelular(t))} keyboardType="phone-pad" />
+
+          <View style={styles.row}>
+            <TextInput style={[styles.input, styles.halfInput]} placeholder="Início ex: 00h:00min" value={inicio} onChangeText={(t) => setInicio(formatarHora(t))} keyboardType="numeric" />
+            <TextInput style={[styles.input, styles.halfInput]} placeholder="Fim ex: 00h:00min" value={fim} onChangeText={(t) => setFim(formatarHora(t))} keyboardType="numeric" />
+          </View>
+
+          <TextInput style={styles.input} placeholder="Data da consulta ex: 00/00/0000" value={data} onChangeText={(t) => setData(formatarData(t))} keyboardType="numeric" />
+          <TextInput style={styles.input} placeholder="Valor da consulta (R$)" value={valor} onChangeText={(t) => setValor(formatarValor(t))} keyboardType="numeric" />
+          <TextInput style={[styles.input, styles.textArea]} placeholder="Evolução (anotações da consulta)" value={evolucao} onChangeText={setEvolucao} multiline numberOfLines={6} />
+
+          {/* Status */}
+          <TouchableOpacity style={[styles.dropdown, { borderColor: "#aaa" }]} onPress={() => setMostrarStatus(!mostrarStatus)}>
+            <Text style={[styles.dropdownText, status && { color: "#000", fontWeight: "600" }]}>
+              {status ? `Status: ${status}` : "Selecione o status"}
+            </Text>
+          </TouchableOpacity>
+
+          {mostrarStatus && (
+            <View style={styles.opcoesContainer}>
+              {opcoesStatus.map((opcao) => (
+                <TouchableOpacity key={opcao} style={styles.opcao} onPress={() => { setStatus(opcao); setMostrarStatus(false); }}>
+                  <Text style={styles.opcaoTexto}>{opcao}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          <TouchableOpacity style={styles.button} onPress={salvarProntuario}>
+            <Text style={styles.buttonText}>💾 Salvar Prontuário</Text>
+          </TouchableOpacity>
+
+          {mensagemSucesso !== "" && (
+            <Text style={styles.mensagemSucesso}>{mensagemSucesso}</Text>
+          )}
         </View>
-      )}
-
-      {/* Campos de texto */}
-      <TextInput
-        style={styles.input}
-        placeholder="Nome do paciente"
-        value={paciente}
-        onChangeText={setPaciente}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="CPF do paciente (xxx.xxx.xxx-xx)"
-        value={cpf}
-        onChangeText={(t) => setCpf(formatarCpf(t))}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Data de nascimento ex: 00/00/0000"
-        value={dataNascimento}
-        onChangeText={(t) => setDataNascimento(formatarData(t))}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Idade"
-        value={idade}
-        onChangeText={setIdade}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Endereço"
-        value={endereco}
-        onChangeText={setEndereco}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="E-mail do paciente"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Celular do paciente ex: (xx) x xxxx-xxxx"
-        value={celular}
-        onChangeText={(t) => setCelular(formatarCelular(t))}
-        keyboardType="phone-pad"
-      />
-
-      <View style={styles.row}>
-        <TextInput
-          style={[styles.input, styles.halfInput]}
-          placeholder="Início ex: 00h:00min"
-          value={inicio}
-          onChangeText={(t) => setInicio(formatarHora(t))}
-          keyboardType="numeric"
-        />
-        <TextInput
-          style={[styles.input, styles.halfInput]}
-          placeholder="Fim ex: 00h:00min"
-          value={fim}
-          onChangeText={(t) => setFim(formatarHora(t))}
-          keyboardType="numeric"
-        />
-      </View>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Data da consulta ex: 00/00/0000"
-        value={data}
-        onChangeText={(t) => setData(formatarData(t))}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Valor da consulta (R$)"
-        value={valor}
-        onChangeText={(t) => setValor(formatarValor(t))}
-        keyboardType="numeric"
-      />
-
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        placeholder="Evolução (anotações da consulta)"
-        value={evolucao}
-        onChangeText={setEvolucao}
-        multiline
-        numberOfLines={6}
-      />
-
-      {/* Status */}
-      <TouchableOpacity
-        style={[styles.dropdown, { borderColor: "#aaa" }]}
-        onPress={() => setMostrarStatus(!mostrarStatus)}
-      >
-        <Text
-          style={[
-            styles.dropdownText,
-            status && { color: "#000", fontWeight: "600" },
-          ]}
-        >
-          {status ? `Status: ${status}` : "Selecione o status"}
-        </Text>
-      </TouchableOpacity>
-
-      {mostrarStatus && (
-        <View style={styles.opcoesContainer}>
-          {opcoesStatus.map((opcao) => (
-            <TouchableOpacity
-              key={opcao}
-              style={styles.opcao}
-              onPress={() => {
-                setStatus(opcao);
-                setMostrarStatus(false);
-              }}
-            >
-              <Text style={styles.opcaoTexto}>{opcao}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-
-      {/* Botão */}
-      <TouchableOpacity style={styles.button} onPress={salvarProntuario}>
-        <Text style={styles.buttonText}>💾 Salvar Prontuário</Text>
-      </TouchableOpacity>
-
-      {mensagemSucesso !== "" && (
-        <Text style={styles.mensagemSucesso}>{mensagemSucesso}</Text>
-      )}
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-// 💅 Estilos
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: "#f3f4f6", flexGrow: 1 },
+  scrollContainer: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+    backgroundColor: "#f3f4f6",
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    width: "100%",
+    maxWidth: 500,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
   title: {
     fontSize: 26,
     fontWeight: "bold",

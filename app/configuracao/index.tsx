@@ -4,7 +4,16 @@ import * as Sharing from "expo-sharing";
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { collection, getDocs, getFirestore } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
-import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { firebaseConfig } from "../../config/firebaseConfig";
 
 import { Document, Packer, Paragraph, TextRun } from "docx";
@@ -13,6 +22,7 @@ import { saveAs } from "file-saver";
 export default function ConfiguracaoScreen() {
   const [prontuarios, setProntuarios] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const { width } = useWindowDimensions(); // 🔹 usado para ajustar elementos conforme a tela
 
   // 🔥 Inicializa Firebase
   const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
@@ -104,44 +114,64 @@ export default function ConfiguracaoScreen() {
     }
   };
 
-  return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
-      <View style={{ alignItems: "center", marginBottom: 20 }}>
-        <Text
-          style={{
-            fontSize: 22,
-            fontWeight: "bold",
-            textAlign: "center",
-            marginBottom: 10,
-          }}
-        >
-          Faça o Backup dos Prontuários:
-        </Text>
-      </View>
+  // 🔹 largura adaptável do botão (celular → estreito / desktop → mais largo)
+  const buttonWidth = width < 400 ? "80%" : width < 800 ? "50%" : "35%";
 
-      <View style={{ alignItems: "center" }}>
+  return (
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Faça o Backup dos Prontuários:</Text>
+
         <TouchableOpacity
-          style={{
-            backgroundColor: "#4CAF50",
-            paddingVertical: 12,
-            paddingHorizontal: 25,
-            borderRadius: 8,
-            width: "50%", // 🔹 botão mais estreito
-          }}
+          style={[styles.button, { width: buttonWidth }]}
           onPress={exportarDOCX}
           disabled={loading}
         >
-          <Text style={{ color: "white", textAlign: "center", fontSize: 16 }}>
-            📄 Exportar Prontuários
-          </Text>
+          <Text style={styles.buttonText}>📄 Exportar Prontuários</Text>
         </TouchableOpacity>
-      </View>
 
-      {loading && (
-        <Text style={{ textAlign: "center", marginTop: 15 }}>
-          Processando exportação...
-        </Text>
-      )}
+        {loading && <Text style={styles.loadingText}>Processando exportação...</Text>}
+      </View>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  container: {
+    alignItems: "center",
+    width: "100%",
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 25,
+    color: "#111827",
+  },
+  button: {
+    backgroundColor: "#10B981",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    elevation: 3,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  loadingText: {
+    marginTop: 15,
+    fontSize: 15,
+    color: "#555",
+    textAlign: "center",
+  },
+});
