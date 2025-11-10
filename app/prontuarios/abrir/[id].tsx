@@ -8,6 +8,7 @@ import {
   getDoc,
   getFirestore,
   serverTimestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
@@ -28,10 +29,18 @@ type Atendimento = "Online" | "Presencial" | "Particular" | "Plano";
 type Status = "Em andamento" | "Encerrado";
 
 export default function AbrirProntuario() {
-  const { id, nome } = useLocalSearchParams();
+  const params = useLocalSearchParams();
   const router = useRouter();
 
-  // ✅ Protege a rota — impede acesso direto sem login
+  // Normaliza possíveis tipos (string | string[] | undefined) para string simples
+  const rawId = (params as any).id;
+  const rawNovo = (params as any).novo;
+  const rawNome = (params as any).nome;
+  const idParam = Array.isArray(rawId) ? rawId[0] : rawId;
+  const novoParam = Array.isArray(rawNovo) ? rawNovo[0] : rawNovo;
+  const nomeParam = Array.isArray(rawNome) ? rawNome[0] : rawNome;
+
+  // 🔒 Protege a rota — impede acesso direto sem login
   useEffect(() => {
     const logged = localStorage.getItem("userLogged");
     const timer = setTimeout(() => {
@@ -42,21 +51,22 @@ export default function AbrirProntuario() {
     return () => clearTimeout(timer);
   }, []);
 
-  const [paciente, setPaciente] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [dataNascimento, setDataNascimento] = useState("");
-  const [idade, setIdade] = useState("");
-  const [endereco, setEndereco] = useState("");
-  const [email, setEmail] = useState("");
-  const [celular, setCelular] = useState("");
-  const [inicio, setInicio] = useState("");
-  const [fim, setFim] = useState("");
-  const [data, setData] = useState("");
-  const [valor, setValor] = useState("");
-  const [evolucao, setEvolucao] = useState("");
+  // 🧠 Estados dos campos
+  const [paciente, setPaciente] = useState<string>(nomeParam || "");
+  const [cpf, setCpf] = useState<string>("");
+  const [dataNascimento, setDataNascimento] = useState<string>("");
+  const [idade, setIdade] = useState<string>("");
+  const [endereco, setEndereco] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [celular, setCelular] = useState<string>("");
+  const [inicio, setInicio] = useState<string>("");
+  const [fim, setFim] = useState<string>("");
+  const [data, setData] = useState<string>("");
+  const [valor, setValor] = useState<string>("");
+  const [evolucao, setEvolucao] = useState<string>("");
   const [tipoAtendimento, setTipoAtendimento] = useState<Atendimento | "">("");
   const [status, setStatus] = useState<Status | "">("");
-  const [mensagemSucesso, setMensagemSucesso] = useState("");
+  const [mensagemSucesso, setMensagemSucesso] = useState<string>("");
 
   const [mostrarOpcoes, setMostrarOpcoes] = useState(false);
   const [mostrarStatus, setMostrarStatus] = useState(false);
@@ -71,6 +81,7 @@ export default function AbrirProntuario() {
     Plano: "#F97316",
   };
 
+  // 🔧 Funções de formatação
   const formatarHora = (texto: string) => {
     const apenasNumeros = texto.replace(/\D/g, "");
     let formatado = apenasNumeros.slice(0, 4);
@@ -119,15 +130,30 @@ export default function AbrirProntuario() {
     return parseFloat(numeros) || 0;
   };
 
+  // 🧩 Carregar dados do Firebase (somente se NÃO for nova consulta)
   useEffect(() => {
     const carregarProntuario = async () => {
       try {
-        if (!id) return;
-        const docRef = doc(db, "prontuarios", id as string);
+        if (novoParam === "true") {
+          // ✅ Nova consulta — tudo em branco, paciente já preenchido via nomeParam
+          setInicio("");
+          setFim("");
+          setData("");
+          setValor("");
+          setEvolucao("");
+          setTipoAtendimento("");
+          setStatus("");
+          // Não carregar documento
+          return;
+        }
+
+        if (!idParam) return;
+        const docRef = doc(db, "prontuarios", idParam as string);
         const snapshot = await getDoc(docRef);
+
         if (snapshot.exists()) {
           const dados = snapshot.data();
-          setPaciente(dados.paciente || "");
+          setPaciente(dados.paciente || nomeParam || "");
           setCpf(dados.cpf || "");
           setDataNascimento(dados.dataNascimento || "");
           setIdade(dados.idade || "");
@@ -137,6 +163,10 @@ export default function AbrirProntuario() {
           setEvolucao(dados.evolucao || "");
           setTipoAtendimento(dados.tipoAtendimento || "");
           setStatus(dados.status || "");
+          setInicio(dados.inicio || "");
+          setFim(dados.fim || "");
+          setData(dados.data || "");
+          setValor(dados.valor || "");
         } else {
           Alert.alert("Erro", "Prontuário não encontrado.");
           router.back();
@@ -145,44 +175,80 @@ export default function AbrirProntuario() {
         console.error("Erro ao carregar prontuário:", e);
       }
     };
-    carregarProntuario();
-  }, [id]);
 
+    carregarProntuario();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idParam, novoParam]);
+
+  // 💾 Salvar alterações ou nova consulta
   const salvarAlteracoes = async () => {
     try {
       setMensagemSucesso("");
       const valorAtual = parseValor(valor);
 
-      await addDoc(collection(db, "prontuarios"), {
-        paciente,
-        cpf,
-        dataNascimento,
-        idade,
-        endereco,
-        email,
-        celular,
-        inicio,
-        fim,
-        data,
-        valor,
-        evolucao,
-        tipoAtendimento,
-        status,
-        criadoEm: serverTimestamp(),
-      });
+      if (novoParam === "true") {
+        // 🆕 Criar nova consulta
+        await addDoc(collection(db, "prontuarios"), {
+          paciente,
+          cpf,
+          dataNascimento,
+          idade,
+          endereco,
+          email,
+          celular,
+          inicio,
+          fim,
+          data,
+          valor,
+          evolucao,
+          tipoAtendimento,
+          status,
+          criadoEm: serverTimestamp(),
+        });
 
-      Alert.alert("✅ Sucesso", "Nova consulta salva com sucesso!");
-      setMensagemSucesso("✅ Nova consulta salva com sucesso!");
+        Alert.alert("✅ Sucesso", "Nova consulta salva com sucesso!");
+        setMensagemSucesso("✅ Nova consulta salva com sucesso!");
+      } else {
+        // ✏️ Atualizar consulta existente
+        if (!idParam) {
+          Alert.alert("Erro", "ID do prontuário inválido para atualização.");
+          return;
+        }
+        const docRef = doc(db, "prontuarios", idParam as string);
+        await updateDoc(docRef, {
+          paciente,
+          cpf,
+          dataNascimento,
+          idade,
+          endereco,
+          email,
+          celular,
+          inicio,
+          fim,
+          data,
+          valor,
+          evolucao,
+          tipoAtendimento,
+          status,
+          atualizadoEm: serverTimestamp(),
+        });
+
+        Alert.alert("✅ Sucesso", "Alterações salvas com sucesso!");
+        setMensagemSucesso("✅ Alterações salvas com sucesso!");
+      }
+
+      // Garante que o parâmetro enviado é string (TS exige string|number)
+      const nomeParaEnviar = paciente || nomeParam || "";
 
       setTimeout(() => {
         router.push({
           pathname: "/prontuarios/historico/[nome]",
-          params: { nome: paciente || (nome as string) || "" },
+          params: { nome: nomeParaEnviar },
         });
       }, 1200);
     } catch (error) {
       console.error("Erro ao salvar consulta:", error);
-      Alert.alert("❌ Erro", "Não foi possível salvar a nova consulta.");
+      Alert.alert("❌ Erro", "Não foi possível salvar as alterações.");
     }
   };
 
@@ -192,7 +258,7 @@ export default function AbrirProntuario() {
     <>
       <Stack.Screen
         options={{
-          title: "Prontuário",
+          title: novoParam === "true" ? "Nova Consulta" : "Editar Consulta",
           headerStyle: { backgroundColor: "#4F46E5" },
           headerTintColor: "#fff",
           headerTitleAlign: "center",
@@ -201,7 +267,7 @@ export default function AbrirProntuario() {
               onPress={() =>
                 router.push({
                   pathname: "/prontuarios/historico/[nome]",
-                  params: { nome: paciente || (nome as string) || "" },
+                  params: { nome: paciente || nomeParam || "" },
                 })
               }
             >
@@ -217,8 +283,11 @@ export default function AbrirProntuario() {
       />
 
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>📝 Nova Consulta</Text>
+        <Text style={styles.title}>
+          {novoParam === "true" ? "🩺 Nova Consulta" : "✏️ Editar Consulta"}
+        </Text>
 
+        {/* Tipo de Atendimento */}
         <TouchableOpacity
           style={[
             styles.dropdown,
@@ -297,6 +366,7 @@ export default function AbrirProntuario() {
           numberOfLines={6}
         />
 
+        {/* Status */}
         <TouchableOpacity
           style={[styles.dropdown, { borderColor: "#aaa" }]}
           onPress={() => setMostrarStatus(!mostrarStatus)}
@@ -329,7 +399,9 @@ export default function AbrirProntuario() {
         )}
 
         <TouchableOpacity style={styles.button} onPress={salvarAlteracoes}>
-          <Text style={styles.buttonText}>💾 Salvar Consulta</Text>
+          <Text style={styles.buttonText}>
+            {novoParam === "true" ? "💾 Salvar Consulta" : "💾 Salvar Alterações"}
+          </Text>
         </TouchableOpacity>
 
         {mensagemSucesso !== "" && (
