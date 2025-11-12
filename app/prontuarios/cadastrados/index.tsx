@@ -6,12 +6,12 @@ import {
   Alert,
   Dimensions,
   FlatList,
-  Platform,
+  Modal,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { db } from "../../../config/firebaseConfig";
 
@@ -29,6 +29,8 @@ export default function ProntuariosCadastrados() {
   const [pacientesUnicos, setPacientesUnicos] = useState<Prontuario[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [busca, setBusca] = useState("");
+  const [modalVisivel, setModalVisivel] = useState(false);
+  const [pacienteSelecionado, setPacienteSelecionado] = useState<string | null>(null);
 
   useEffect(() => {
     const logged = localStorage.getItem("userLogged");
@@ -76,34 +78,20 @@ export default function ProntuariosCadastrados() {
     return () => unsubscribe();
   }, []);
 
-  const excluirProntuariosDoPaciente = async (nome: string) => {
-    const confirmar = () => {
-      const texto = `Tem certeza que deseja excluir todos os prontuários de ${nome}?`;
-      if (Platform.OS === "web") {
-        const ok = window.confirm(texto);
-        if (!ok) return;
-        executarExclusao(nome);
-      } else {
-        Alert.alert("Excluir paciente", texto, [
-          { text: "Cancelar", style: "cancel" },
-          {
-            text: "Excluir",
-            style: "destructive",
-            onPress: () => executarExclusao(nome),
-          },
-        ]);
-      }
-    };
-    confirmar();
+  const excluirProntuariosDoPaciente = (nome: string) => {
+    setPacienteSelecionado(nome);
+    setModalVisivel(true);
   };
 
-  const executarExclusao = async (nome: string) => {
+  const confirmarExclusao = async () => {
+    if (!pacienteSelecionado) return;
     try {
-      const registros = prontuarios.filter((p) => p.paciente === nome);
+      const registros = prontuarios.filter((p) => p.paciente === pacienteSelecionado);
       for (const reg of registros) {
         await deleteDoc(doc(db, "prontuarios", reg.id));
       }
-      Alert.alert("✅ Todos os prontuários de " + nome + " foram excluídos!");
+      setModalVisivel(false);
+      Alert.alert("✅ Todos os prontuários de " + pacienteSelecionado + " foram excluídos!");
     } catch (error) {
       console.error("Erro ao excluir:", error);
       Alert.alert("❌ Erro ao excluir prontuários do paciente.");
@@ -184,6 +172,41 @@ export default function ProntuariosCadastrados() {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {/* Modal de confirmação */}
+      <Modal
+        transparent
+        visible={modalVisivel}
+        animationType="fade"
+        onRequestClose={() => setModalVisivel(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitulo}>Confirmar Exclusão</Text>
+            <Text style={styles.modalTexto}>
+              Tem certeza que deseja excluir todos os prontuários de{" "}
+              <Text style={{ fontWeight: "bold" }}>{pacienteSelecionado}</Text>?
+            </Text>
+
+            <View style={styles.modalBotoes}>
+              <TouchableOpacity
+                style={[styles.modalBotao, styles.modalCancelar]}
+                onPress={() => setModalVisivel(false)}
+              >
+                <Text style={styles.modalTextoBotao}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBotao, styles.modalExcluir]}
+                onPress={confirmarExclusao}
+              >
+                <Text style={[styles.modalTextoBotao, { color: "#fff" }]}>
+                  Excluir
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -290,5 +313,53 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 14,
+  },
+  // Estilos do modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    backgroundColor: "#fff",
+    padding: 24,
+    borderRadius: 14,
+    width: "85%",
+    maxWidth: 400,
+    alignItems: "center",
+  },
+  modalTitulo: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalTexto: {
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#444",
+  },
+  modalBotoes: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  modalBotao: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginHorizontal: 5,
+  },
+  modalCancelar: {
+    backgroundColor: "#e5e7eb",
+  },
+  modalExcluir: {
+    backgroundColor: "#ef4444",
+  },
+  modalTextoBotao: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
