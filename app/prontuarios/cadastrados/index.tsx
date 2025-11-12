@@ -7,7 +7,6 @@ import {
   Dimensions,
   FlatList,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -133,77 +132,68 @@ export default function ProntuariosCadastrados() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
-      <View style={styles.container}>
-        <Text style={styles.title}>👥 Pacientes Cadastrados</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>👥 Pacientes Cadastrados</Text>
 
-        <Text style={styles.countText}>
-          Total de pacientes: {pacientesUnicos.length}
-        </Text>
+      <Text style={styles.countText}>
+        Total de pacientes: {pacientesUnicos.length}
+      </Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Buscar paciente..."
-          value={busca}
-          onChangeText={setBusca}
-        />
+      <TextInput
+        style={styles.input}
+        placeholder="Buscar paciente..."
+        value={busca}
+        onChangeText={setBusca}
+      />
 
-        {listaFiltrada.length === 0 ? (
-          <Text style={styles.text}>Nenhum paciente encontrado.</Text>
-        ) : (
-          <FlatList
-            data={listaFiltrada}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.card}>
-                <Text style={styles.nome}>{item.paciente}</Text>
-                <Text style={styles.info}>
-                  🗓️ Último atendimento: {item.data || "—"}
-                </Text>
-                <Text style={styles.info}>
-                  💬 {item.tipoAtendimento || "—"}
-                </Text>
-                <Text style={styles.info}>📍 {item.status || "—"}</Text>
+      {listaFiltrada.length === 0 ? (
+        <Text style={styles.text}>Nenhum paciente encontrado.</Text>
+      ) : (
+        <FlatList
+          data={listaFiltrada}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Text style={styles.nome}>{item.paciente}</Text>
+              <Text style={styles.info}>
+                🗓️ Último atendimento: {item.data || "—"}
+              </Text>
+              <Text style={styles.info}>
+                💬 {item.tipoAtendimento || "—"}
+              </Text>
+              <Text style={styles.info}>📍 {item.status || "—"}</Text>
 
-                <View style={styles.botoesContainer}>
-                  <TouchableOpacity
-                    style={styles.botaoAbrir}
-                    onPress={() => abrirHistorico(item.paciente)}
-                  >
-                    <Text style={styles.botaoTexto}>Abrir histórico</Text>
-                  </TouchableOpacity>
+              <View style={styles.botoesContainer}>
+                <TouchableOpacity
+                  style={styles.botaoAbrir}
+                  onPress={() => abrirHistorico(item.paciente)}
+                >
+                  <Text style={styles.botaoTexto}>Abrir histórico</Text>
+                </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={styles.botaoExcluir}
-                    onPress={() =>
-                      excluirProntuariosDoPaciente(item.paciente)
-                    }
-                  >
-                    <Text style={styles.botaoExcluirTexto}>Excluir</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={styles.botaoExcluir}
+                  onPress={() => excluirProntuariosDoPaciente(item.paciente)}
+                >
+                  <Text style={styles.botaoExcluirTexto}>Excluir</Text>
+                </TouchableOpacity>
               </View>
-            )}
-            scrollEnabled={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
-          />
-        )}
-      </View>
-    </ScrollView>
+            </View>
+          )}
+          contentContainerStyle={{ paddingBottom: 60 }}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+    </View>
   );
 }
 
 const largura = Dimensions.get("window").width;
 
 const styles = StyleSheet.create({
-  scroll: {
-    flexGrow: 1,
-    justifyContent: "center",
-    backgroundColor: "#f3f4f6",
-    paddingBottom: 40,
-  },
   container: {
     flex: 1,
+    backgroundColor: "#f3f4f6",
     paddingHorizontal: largura < 600 ? 20 : 100,
     paddingTop: 20,
   },
@@ -233,9 +223,9 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
     fontSize: 16,
     marginBottom: 20,
-    alignSelf: "center", // centraliza o campo
-    width: "80%", // ou "80%" se quiser menor
-    maxWidth: 600, // limita a largura em telas grandes
+    alignSelf: "center",
+    width: "80%",
+    maxWidth: 600,
   },
   text: {
     fontSize: 18,
@@ -251,9 +241,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 6,
     elevation: 2,
-     alignSelf: "center", // 🔹 centraliza o card
-  width: "90%", // 🔹 ocupa 90% da largura da tela (ajuste se quiser menor)
-  maxWidth: 600, // 🔹 não passa de 600px em telas grandes
+    alignSelf: "center",
+    width: "90%",
+    maxWidth: 600,
   },
   nome: {
     fontSize: 18,
@@ -268,10 +258,10 @@ const styles = StyleSheet.create({
   },
   botoesContainer: {
     flexDirection: "row",
-    justifyContent: "flex-start", // centraliza os dois botões
+    justifyContent: "flex-start",
     alignItems: "center",
     marginTop: 12,
-    gap: 10, // adiciona espaçamento entre os botões
+    gap: 10,
   },
   botaoAbrir: {
     backgroundColor: "#4F46E5",
@@ -279,8 +269,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 10,
     alignItems: "center",
-    maxWidth: 140, // 🔹 limita largura
-    width: "45%", // 🔹 ocupa menos espaço
+    maxWidth: 140,
+    width: "45%",
   },
   botaoExcluir: {
     backgroundColor: "#ef4444",

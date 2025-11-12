@@ -214,15 +214,15 @@ export default function Prontuarios() {
           {/* Inputs */}
           <TextInput style={styles.input} placeholder="Nome do paciente" value={paciente} onChangeText={setPaciente} />
           <TextInput style={styles.input} placeholder="CPF do paciente (xxx.xxx.xxx-xx)" value={cpf} onChangeText={(t) => setCpf(formatarCpf(t))} keyboardType="numeric" />
-          <TextInput style={styles.input} placeholder="Data de nascimento ex: 00/00/0000" value={dataNascimento} onChangeText={(t) => setDataNascimento(formatarData(t))} keyboardType="numeric" />
+          <TextInput style={styles.input} placeholder="Data de nasc. ex: 00/00/0000" value={dataNascimento} onChangeText={(t) => setDataNascimento(formatarData(t))} keyboardType="numeric" />
           <TextInput style={styles.input} placeholder="Idade" value={idade} onChangeText={setIdade} keyboardType="numeric" />
           <TextInput style={styles.input} placeholder="Endereço" value={endereco} onChangeText={setEndereco} />
           <TextInput style={styles.input} placeholder="E-mail do paciente" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
           <TextInput style={styles.input} placeholder="Celular ex: (xx) x xxxx-xxxx" value={celular} onChangeText={(t) => setCelular(formatarCelular(t))} keyboardType="phone-pad" />
 
           <View style={styles.row}>
-            <TextInput style={[styles.input, styles.halfInput]} placeholder="Início ex: 00h:00min" value={inicio} onChangeText={(t) => setInicio(formatarHora(t))} keyboardType="numeric" />
-            <TextInput style={[styles.input, styles.halfInput]} placeholder="Fim ex: 00h:00min" value={fim} onChangeText={(t) => setFim(formatarHora(t))} keyboardType="numeric" />
+            <TextInput style={[styles.input, styles.halfInput]} placeholder="Início 00h:00min" value={inicio} onChangeText={(t) => setInicio(formatarHora(t))} keyboardType="numeric" />
+            <TextInput style={[styles.input, styles.halfInput]} placeholder="Fim 00h:00min" value={fim} onChangeText={(t) => setFim(formatarHora(t))} keyboardType="numeric" />
           </View>
 
           <TextInput style={styles.input} placeholder="Data da consulta ex: 00/00/0000" value={data} onChangeText={(t) => setData(formatarData(t))} keyboardType="numeric" />

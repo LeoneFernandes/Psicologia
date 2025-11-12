@@ -6,9 +6,12 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   getFirestore,
+  query,
   serverTimestamp,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
@@ -32,7 +35,7 @@ export default function AbrirProntuario() {
   const params = useLocalSearchParams();
   const router = useRouter();
 
-  // Normaliza possíveis tipos (string | string[] | undefined) para string simples
+  // Normaliza os parâmetros da URL
   const rawId = (params as any).id;
   const rawNovo = (params as any).novo;
   const rawNome = (params as any).nome;
@@ -40,18 +43,16 @@ export default function AbrirProntuario() {
   const novoParam = Array.isArray(rawNovo) ? rawNovo[0] : rawNovo;
   const nomeParam = Array.isArray(rawNome) ? rawNome[0] : rawNome;
 
-  // 🔒 Protege a rota — impede acesso direto sem login
+  // Protege o acesso
   useEffect(() => {
     const logged = localStorage.getItem("userLogged");
     const timer = setTimeout(() => {
-      if (logged !== "true") {
-        router.replace("/login");
-      }
+      if (logged !== "true") router.replace("/login");
     }, 100);
     return () => clearTimeout(timer);
   }, []);
 
-  // 🧠 Estados dos campos
+  // Estados do prontuário
   const [paciente, setPaciente] = useState<string>(nomeParam || "");
   const [cpf, setCpf] = useState<string>("");
   const [dataNascimento, setDataNascimento] = useState<string>("");
@@ -81,7 +82,7 @@ export default function AbrirProntuario() {
     Plano: "#F97316",
   };
 
-  // 🔧 Funções de formatação
+  // Funções de formatação
   const formatarHora = (texto: string) => {
     const apenasNumeros = texto.replace(/\D/g, "");
     let formatado = apenasNumeros.slice(0, 4);
@@ -114,38 +115,16 @@ export default function AbrirProntuario() {
     return "R$ " + numero.replace(".", ",");
   };
 
-  const formatarCelular = (texto: string) => {
-    const apenasNumeros = texto.replace(/\D/g, "").slice(0, 11);
-    if (apenasNumeros.length <= 2) return `(${apenasNumeros}`;
-    if (apenasNumeros.length <= 7)
-      return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(2)}`;
-    return `(${apenasNumeros.slice(0, 2)}) ${apenasNumeros.slice(
-      2,
-      3
-    )} ${apenasNumeros.slice(3, 7)}-${apenasNumeros.slice(7)}`;
-  };
-
   const parseValor = (valorTexto: string): number => {
     const numeros = valorTexto.replace(/[R$\s.]/g, "").replace(",", ".");
     return parseFloat(numeros) || 0;
   };
 
-  // 🧩 Carregar dados do Firebase (somente se NÃO for nova consulta)
+  // Carrega o prontuário atual
   useEffect(() => {
     const carregarProntuario = async () => {
       try {
-        if (novoParam === "true") {
-          // ✅ Nova consulta — tudo em branco, paciente já preenchido via nomeParam
-          setInicio("");
-          setFim("");
-          setData("");
-          setValor("");
-          setEvolucao("");
-          setTipoAtendimento("");
-          setStatus("");
-          // Não carregar documento
-          return;
-        }
+        if (novoParam === "true") return; // Nova consulta, não carrega
 
         if (!idParam) return;
         const docRef = doc(db, "prontuarios", idParam as string);
@@ -177,25 +156,54 @@ export default function AbrirProntuario() {
     };
 
     carregarProntuario();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idParam, novoParam]);
 
-  // 💾 Salvar alterações ou nova consulta
+  // 💾 Salvar (cria nova consulta copiando dados antigos)
   const salvarAlteracoes = async () => {
     try {
       setMensagemSucesso("");
       const valorAtual = parseValor(valor);
 
       if (novoParam === "true") {
-        // 🆕 Criar nova consulta
+        // 🆕 Nova consulta — copia dados anteriores
+        let dadosBase = {
+          cpf: "",
+          dataNascimento: "",
+          idade: "",
+          endereco: "",
+          email: "",
+          celular: "",
+        };
+
+        try {
+          const q = query(
+            collection(db, "prontuarios"),
+            where("paciente", "==", paciente)
+          );
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const docData = snap.docs[0].data();
+            dadosBase = {
+              cpf: docData.cpf || "",
+              dataNascimento: docData.dataNascimento || "",
+              idade: docData.idade || "",
+              endereco: docData.endereco || "",
+              email: docData.email || "",
+              celular: docData.celular || "",
+            };
+          }
+        } catch (e) {
+          console.warn("⚠️ Erro ao buscar dados anteriores:", e);
+        }
+
         await addDoc(collection(db, "prontuarios"), {
           paciente,
-          cpf,
-          dataNascimento,
-          idade,
-          endereco,
-          email,
-          celular,
+          cpf: cpf || dadosBase.cpf,
+          dataNascimento: dataNascimento || dadosBase.dataNascimento,
+          idade: idade || dadosBase.idade,
+          endereco: endereco || dadosBase.endereco,
+          email: email || dadosBase.email,
+          celular: celular || dadosBase.celular,
           inicio,
           fim,
           data,
@@ -209,7 +217,7 @@ export default function AbrirProntuario() {
         Alert.alert("✅ Sucesso", "Nova consulta salva com sucesso!");
         setMensagemSucesso("✅ Nova consulta salva com sucesso!");
       } else {
-        // ✏️ Atualizar consulta existente
+        // ✏️ Atualizar existente
         if (!idParam) {
           Alert.alert("Erro", "ID do prontuário inválido para atualização.");
           return;
@@ -237,13 +245,10 @@ export default function AbrirProntuario() {
         setMensagemSucesso("✅ Alterações salvas com sucesso!");
       }
 
-      // Garante que o parâmetro enviado é string (TS exige string|number)
-      const nomeParaEnviar = paciente || nomeParam || "";
-
       setTimeout(() => {
         router.push({
           pathname: "/prontuarios/historico/[nome]",
-          params: { nome: nomeParaEnviar },
+          params: { nome: paciente },
         });
       }, 1200);
     } catch (error) {
@@ -267,7 +272,7 @@ export default function AbrirProntuario() {
               onPress={() =>
                 router.push({
                   pathname: "/prontuarios/historico/[nome]",
-                  params: { nome: paciente || nomeParam || "" },
+                  params: { nome: paciente },
                 })
               }
             >
@@ -332,13 +337,13 @@ export default function AbrirProntuario() {
         <View style={styles.row}>
           <TextInput
             style={[styles.input, styles.halfInput]}
-            placeholder="Início"
+            placeholder="Início 00h:00min"
             value={inicio}
             onChangeText={(t) => setInicio(formatarHora(t))}
           />
           <TextInput
             style={[styles.input, styles.halfInput]}
-            placeholder="Fim"
+            placeholder="Fim 00h:00min"
             value={fim}
             onChangeText={(t) => setFim(formatarHora(t))}
           />

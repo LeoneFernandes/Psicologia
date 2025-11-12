@@ -258,14 +258,14 @@ export default function Agendamentos() {
       <View style={isWide ? styles.rowInputs : {}}>
         <TextInput
           style={[styles.input, isWide && styles.inputHalf]}
-          placeholder="Horário de início ex: 00h 00min"
+          placeholder="Início ex: 00h 00min"
           value={inicio}
           onChangeText={(t) => setInicio(formatarHora(t))}
           keyboardType="numeric"
         />
         <TextInput
           style={[styles.input, isWide && styles.inputHalf]}
-          placeholder="Horário de fim ex: 00h 00min"
+          placeholder="Fim ex: 00h 00min"
           value={fim}
           onChangeText={(t) => setFim(formatarHora(t))}
           keyboardType="numeric"
