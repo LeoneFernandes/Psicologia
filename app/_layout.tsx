@@ -16,6 +16,14 @@ export default function RootLayout() {
         .catch((err) =>
           console.log("❌ Falha ao registrar o Service Worker:", err)
         );
+
+      // 👇 Detecta quando uma nova versão do app é ativada e recarrega automaticamente
+      navigator.serviceWorker.addEventListener("message", (event) => {
+        if (event.data?.type === "NEW_VERSION_ACTIVATED") {
+          console.log("🆕 Nova versão detectada! Recarregando app...");
+          window.location.reload();
+        }
+      });
     }
   }, []);
 
