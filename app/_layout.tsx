@@ -2,10 +2,23 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { TouchableOpacity } from "react-native";
 import "react-native-reanimated";
 
 export default function RootLayout() {
+  // ✅ Registra o Service Worker no carregamento da aplicação (versão web)
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/service-worker.js")
+        .then(() => console.log("✅ Service Worker registrado com sucesso!"))
+        .catch((err) =>
+          console.log("❌ Falha ao registrar o Service Worker:", err)
+        );
+    }
+  }, []);
+
   return (
     <>
       <Stack>
@@ -88,7 +101,9 @@ export default function RootLayout() {
             headerTintColor: "#fff",
             headerTitleAlign: "center",
             headerLeft: () => (
-              <TouchableOpacity onPress={() => router.push("/prontuarios/opcao")}>
+              <TouchableOpacity
+                onPress={() => router.push("/prontuarios/opcao")}
+              >
                 <Ionicons
                   name="arrow-back"
                   size={24}
@@ -108,7 +123,9 @@ export default function RootLayout() {
             headerTintColor: "#fff",
             headerTitleAlign: "center",
             headerLeft: () => (
-              <TouchableOpacity onPress={() => router.push("/prontuarios/opcao")}>
+              <TouchableOpacity
+                onPress={() => router.push("/prontuarios/opcao")}
+              >
                 <Ionicons
                   name="arrow-back"
                   size={24}
