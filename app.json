@@ -27,17 +27,29 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png",
+      "favicon": "./public/icon-192.png",
 
-      "pwa": true,
-      "name": "Psicóloga Mirian",
-      "shortName": "Psicóloga Mirian",
-      "themeColor": "#4F46E5",
-      "backgroundColor": "#ffffff",
-      "display": "standalone",
-      "startUrl": "./",
-      "scope": "./",
-      "webManifestUrl": "./manifest.json",
+      "appManifest": {
+        "name": "Psicóloga Mirian",
+        "short_name": "Mirian",
+        "start_url": "/",
+        "scope": "/",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#4F46E5",
+        "icons": [
+          {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+          },
+          {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+          }
+        ]
+      },
 
       "serviceWorker": {
         "src": "service-worker.js",
