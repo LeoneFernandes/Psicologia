@@ -1,13 +1,10 @@
 {
-  "short_name": "Psicologia",
-  "name": "Dona Mirian - Prontuários",
-  "id": "/",
-  "scope": "/",
-  "start_url": "/?source=pwa",
+  "name": "Psicóloga Mirian",
+  "short_name": "Mirian",
+  "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#FFFFFF",
-  "theme_color": "#4F46E5",
+  "background_color": "#ffffff",
+  "theme_color": "#6a4c93",
   "icons": [
     {
       "src": "/icon-192.png",
