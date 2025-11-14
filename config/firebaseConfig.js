@@ -3,14 +3,14 @@ import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { collection, getDocs, getFirestore } from "firebase/firestore";
 
-// 🔒 Usa variáveis de ambiente (Vercel + Expo)
+// 🔥 Configuração do Firebase (idêntica à do Console)
 const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_API_KEY,
-  authDomain: process.env.EXPO_PUBLIC_AUTH_DOMAIN,
-  projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
-  storageBucket: process.env.EXPO_PUBLIC_STORAGE_BUCKET,
-  messagingSenderId: process.env.EXPO_PUBLIC_MESSAGING_SENDER_ID,
-  appId: process.env.EXPO_PUBLIC_APP_ID,
+  apiKey: "AIzaSyDq5xYi49umiDC7n7LQJGYhZ-8SH_KiwZ4",
+  authDomain: "psicologiaapp-de73f.firebaseapp.com",
+  projectId: "psicologiaapp-de73f",
+  storageBucket: "psicologiaapp-de73f.firebasestorage.app",
+  messagingSenderId: "8341175621",
+  appId: "1:8341175621:web:be1e9a13e3fb38dc11d22c"
 };
 
 // ✅ Inicializa o app Firebase uma única vez
@@ -34,6 +34,6 @@ export async function testarConexao() {
   }
 }
 
-// ✅ Exporta também a configuração (caso precise acessar diretamente)
+// ✅ Exporta também a configuração, caso precise acessar diretamente
 export { firebaseConfig };
 
