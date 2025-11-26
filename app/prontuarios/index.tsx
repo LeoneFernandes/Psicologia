@@ -30,7 +30,7 @@ export default function Prontuarios() {
     return () => clearTimeout(timer);
   }, []);
 
-  // --- estados (sem mudanças) ---
+  // --- estados ---
   const [paciente, setPaciente] = useState("");
   const [cpf, setCpf] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
@@ -59,7 +59,7 @@ export default function Prontuarios() {
     Plano: "#F97316",
   };
 
-  // --- funções de formatação (sem mudanças) ---
+  // formatações
   const formatarHora = (texto: string) => {
     const apenasNumeros = texto.replace(/\D/g, "");
     let formatado = apenasNumeros.slice(0, 4);
@@ -105,14 +105,16 @@ export default function Prontuarios() {
     return formatado;
   };
 
-  // --- função de salvar (inalterada) ---
+  // salvar
   const salvarProntuario = async () => {
     try {
       setMensagemSucesso("");
+
       if (!paciente.trim() || !data.trim()) {
         Alert.alert("⚠️ Campos obrigatórios", "Preencha o nome e a data.");
         return;
       }
+
       if (email && !email.includes("@")) {
         Alert.alert("⚠️ E-mail inválido", "Insira um e-mail válido.");
         return;
@@ -139,6 +141,7 @@ export default function Prontuarios() {
       Alert.alert("✅ Sucesso", "Prontuário salvo com sucesso!");
       setMensagemSucesso("✅ Salvo com sucesso!");
 
+      // limpar
       setPaciente("");
       setCpf("");
       setDataNascimento("");
@@ -162,7 +165,6 @@ export default function Prontuarios() {
 
   const corSelecionada = tipoAtendimento ? cores[tipoAtendimento] : undefined;
 
-  // --- layout responsivo ---
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -211,27 +213,125 @@ export default function Prontuarios() {
             </View>
           )}
 
-          {/* Inputs */}
-          <TextInput style={styles.input} placeholder="Nome do paciente" value={paciente} onChangeText={setPaciente} />
-          <TextInput style={styles.input} placeholder="CPF do paciente (xxx.xxx.xxx-xx)" value={cpf} onChangeText={(t) => setCpf(formatarCpf(t))} keyboardType="numeric" />
-          <TextInput style={styles.input} placeholder="Data de nasc. ex: 00/00/0000" value={dataNascimento} onChangeText={(t) => setDataNascimento(formatarData(t))} keyboardType="numeric" />
-          <TextInput style={styles.input} placeholder="Idade" value={idade} onChangeText={setIdade} keyboardType="numeric" />
-          <TextInput style={styles.input} placeholder="Endereço" value={endereco} onChangeText={setEndereco} />
-          <TextInput style={styles.input} placeholder="E-mail do paciente" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-          <TextInput style={styles.input} placeholder="Celular ex: (xx) x xxxx-xxxx" value={celular} onChangeText={(t) => setCelular(formatarCelular(t))} keyboardType="phone-pad" />
+          {/* Nome do Paciente */}
+          <TextInput
+            style={styles.input}
+            placeholder="Nome do paciente"
+            value={paciente}
+            onChangeText={setPaciente}
+          />
+          <Text style={styles.obrigatorio}>campo obrigatório*</Text>
 
+          {/* CPF */}
+          <TextInput
+            style={styles.input}
+            placeholder="CPF do paciente (xxx.xxx.xxx-xx)"
+            value={cpf}
+            onChangeText={(t) => setCpf(formatarCpf(t))}
+            keyboardType="numeric"
+          />
+
+          {/* Data de nasc */}
+          <TextInput
+            style={styles.input}
+            placeholder="Data de nasc. ex: 00/00/0000"
+            value={dataNascimento}
+            onChangeText={(t) => setDataNascimento(formatarData(t))}
+            keyboardType="numeric"
+          />
+
+          {/* Idade */}
+          <TextInput
+            style={styles.input}
+            placeholder="Idade"
+            value={idade}
+            onChangeText={setIdade}
+            keyboardType="numeric"
+          />
+
+          {/* Endereço */}
+          <TextInput
+            style={styles.input}
+            placeholder="Endereço"
+            value={endereco}
+            onChangeText={setEndereco}
+          />
+
+          {/* Email */}
+          <TextInput
+            style={styles.input}
+            placeholder="E-mail do paciente"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+
+          {/* Celular */}
+          <TextInput
+            style={styles.input}
+            placeholder="Celular ex: (xx) x xxxx-xxxx"
+            value={celular}
+            onChangeText={(t) => setCelular(formatarCelular(t))}
+            keyboardType="phone-pad"
+          />
+
+          {/* Horários */}
           <View style={styles.row}>
-            <TextInput style={[styles.input, styles.halfInput]} placeholder="Início 00h:00min" value={inicio} onChangeText={(t) => setInicio(formatarHora(t))} keyboardType="numeric" />
-            <TextInput style={[styles.input, styles.halfInput]} placeholder="Fim 00h:00min" value={fim} onChangeText={(t) => setFim(formatarHora(t))} keyboardType="numeric" />
+            <TextInput
+              style={[styles.input, styles.halfInput]}
+              placeholder="Início 00h:00min"
+              value={inicio}
+              onChangeText={(t) => setInicio(formatarHora(t))}
+              keyboardType="numeric"
+            />
+
+            <TextInput
+              style={[styles.input, styles.halfInput]}
+              placeholder="Fim 00h:00min"
+              value={fim}
+              onChangeText={(t) => setFim(formatarHora(t))}
+              keyboardType="numeric"
+            />
           </View>
 
-          <TextInput style={styles.input} placeholder="Data da consulta ex: 00/00/0000" value={data} onChangeText={(t) => setData(formatarData(t))} keyboardType="numeric" />
-          <TextInput style={styles.input} placeholder="Valor da consulta (R$)" value={valor} onChangeText={(t) => setValor(formatarValor(t))} keyboardType="numeric" />
-          <TextInput style={[styles.input, styles.textArea]} placeholder="Evolução (anotações da consulta)" value={evolucao} onChangeText={setEvolucao} multiline numberOfLines={6} />
+          {/* Data da consulta */}
+          <TextInput
+            style={styles.input}
+            placeholder="Data da consulta ex: 00/00/0000"
+            value={data}
+            onChangeText={(t) => setData(formatarData(t))}
+            keyboardType="numeric"
+          />
+          <Text style={styles.obrigatorio}>campo obrigatório*</Text>
+
+          {/* Valor */}
+          <TextInput
+            style={styles.input}
+            placeholder="Valor da consulta (R$)"
+            value={valor}
+            onChangeText={(t) => setValor(formatarValor(t))}
+            keyboardType="numeric"
+          />
+
+          {/* Evolução */}
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Evolução (anotações da consulta)"
+            value={evolucao}
+            onChangeText={setEvolucao}
+            multiline
+            numberOfLines={6}
+          />
 
           {/* Status */}
-          <TouchableOpacity style={[styles.dropdown, { borderColor: "#aaa" }]} onPress={() => setMostrarStatus(!mostrarStatus)}>
-            <Text style={[styles.dropdownText, status && { color: "#000", fontWeight: "600" }]}>
+          <TouchableOpacity
+            style={[styles.dropdown, { borderColor: "#aaa" }]}
+            onPress={() => setMostrarStatus(!mostrarStatus)}
+          >
+            <Text
+              style={[styles.dropdownText, status && { color: "#000", fontWeight: "600" }]}
+            >
               {status ? `Status: ${status}` : "Selecione o status"}
             </Text>
           </TouchableOpacity>
@@ -239,13 +339,21 @@ export default function Prontuarios() {
           {mostrarStatus && (
             <View style={styles.opcoesContainer}>
               {opcoesStatus.map((opcao) => (
-                <TouchableOpacity key={opcao} style={styles.opcao} onPress={() => { setStatus(opcao); setMostrarStatus(false); }}>
+                <TouchableOpacity
+                  key={opcao}
+                  style={styles.opcao}
+                  onPress={() => {
+                    setStatus(opcao);
+                    setMostrarStatus(false);
+                  }}
+                >
                   <Text style={styles.opcaoTexto}>{opcao}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           )}
 
+          {/* Botão */}
           <TouchableOpacity style={styles.button} onPress={salvarProntuario}>
             <Text style={styles.buttonText}>💾 Salvar Prontuário</Text>
           </TouchableOpacity>
@@ -309,14 +417,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 14,
     borderRadius: 10,
-    marginBottom: 15,
+    marginBottom: 5,
     borderWidth: 1,
     borderColor: "#ddd",
     fontSize: 16,
   },
+  obrigatorio: {
+    color: "#dc2626",
+    fontSize: 12,
+    marginBottom: 14,
+    marginLeft: 5,
+  },
   row: { flexDirection: "row", justifyContent: "space-between" },
   halfInput: { width: "48%" },
-  textArea: { height: 130, textAlignVertical: "top" },
+  textArea: { height: 130, textAlignVertical: "top", marginBottom: 15 },
   button: {
     backgroundColor: "#4F46E5",
     paddingVertical: 15,
